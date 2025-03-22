@@ -1,0 +1,131 @@
+import random
+
+def create_board(size):
+    return [['O' for _ in range(size)] for _ in range(size)]
+
+def print_board(board):
+    print("\nCurrent Battlefield:")
+    for row in board:
+        print(' '.join(row))
+    print()
+
+def manual_place_ship(board, ship_size):
+    size = len(board)
+    while True:
+        print_board(board)
+        print(f"Placing ship of size {ship_size}")
+        try:
+            row = int(input(f"Enter starting row (0-{size-1}): "))
+            col = int(input(f"Enter starting column (0-{size-1}): "))
+            orientation = input("Enter orientation (horizontal/vertical): ").strip().lower()
+
+            if orientation not in ['horizontal', 'vertical']:
+                print("Invalid orientation. Try again.")
+                continue
+
+            if orientation == 'horizontal':
+                if col + ship_size > size:
+                    print("Ship goes out of bounds horizontally. Try again.")
+                    continue
+                if any(board[row][col + i] == 'S' for i in range(ship_size)):
+                    print("Overlap detected. Try again.")
+                    continue
+                for i in range(ship_size):
+                    board[row][col + i] = 'S'
+                break
+            else:
+                if row + ship_size > size:
+                    print("Ship goes out of bounds vertically. Try again.")
+                    continue
+                if any(board[row + i][col] == 'S' for i in range(ship_size)):
+                    print("Overlap detected. Try again.")
+                    continue
+                for i in range(ship_size):
+                    board[row + i][col] = 'S'
+                break
+        except ValueError:
+            print("Invalid input. Enter numbers only. Try again.")
+
+def place_ship(board, ship_size):
+    size = len(board)
+    while True:
+        orientation = random.choice(['horizontal', 'vertical'])
+        if orientation == 'horizontal':
+            row = random.randint(0, size - 1)
+            col = random.randint(0, size - ship_size)
+            if all(board[row][col + i] == 'O' for i in range(ship_size)):
+                for i in range(ship_size):
+                    board[row][col + i] = 'S'
+                return
+        else:
+            row = random.randint(0, size - ship_size)
+            col = random.randint(0, size - 1)
+            if all(board[row + i][col] == 'O' for i in range(ship_size)):
+                for i in range(ship_size):
+                    board[row + i][col] = 'S'
+                return
+
+def play_battleship():
+    size = 10
+    ship_sizes = [3, 4, 5]
+    
+    board = create_board(size)
+    computer_board = create_board(size)
+    
+    print("== Place your ships ==")
+    for ship_size in ship_sizes:
+        manual_place_ship(board, ship_size)
+
+    for ship_size in ship_sizes:
+        place_ship(computer_board, ship_size)
+    
+    player_ships = sum(row.count('S') for row in board)
+    computer_ships = sum(row.count('S') for row in computer_board)
+    
+    while player_ships > 0 and computer_ships > 0:
+        print_board(board)
+        
+        # Player's turn
+        while True:
+            try:
+                row = int(input("Enter row to attack (0-9): "))
+                col = int(input("Enter column to attack (0-9): "))
+                if 0 <= row < size and 0 <= col < size and board[row][col] not in ['X', 'M']:
+                    break
+                print("Invalid input or already targeted. Try again.")
+            except ValueError:
+                print("Invalid input. Try again.")
+        
+        if computer_board[row][col] == 'S':
+            print("Hit!")
+            board[row][col] = 'X'
+            computer_board[row][col] = 'X'
+            computer_ships -= 1
+        else:
+            print("Miss!")
+            board[row][col] = 'M'
+        
+        # Computer's turn
+        while True:
+            row_c, col_c = random.randint(0, size - 1), random.randint(0, size - 1)
+            if board[row_c][col_c] == 'S' or board[row_c][col_c] == 'O':
+                break
+        
+        print(f"\nComputer guesses: {row_c}, {col_c}")
+        if board[row_c][col_c] == 'S':
+            print("Computer hit your ship!")
+            board[row_c][col_c] = 'X'
+            player_ships -= 1
+        elif board[row_c][col_c] == 'O':
+            print("Computer missed!")
+            board[row_c][col_c] = 'M'
+        
+        print(f"\nYour ships remaining: {player_ships}")
+        print(f"Computer ships remaining: {computer_ships}\n")
+    
+    if player_ships == 0:
+        print("Game over! The computer won.")
+    else:
+        print("Congratulations! You won!")
+
+play_battleship()
