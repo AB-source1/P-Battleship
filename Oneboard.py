@@ -4,6 +4,7 @@ import sys
 import time
 from config import Config
 from board import create_board, place_ship_randomly
+from ui import draw_grid, draw_text_center, draw_button, draw_text_input_box
 
 pygame.init()
 
@@ -30,51 +31,6 @@ player_attacks = [['' for _ in range(Config.GRID_SIZE)] for _ in range(Config.GR
 
 for size in Config.SHIP_SIZES:
     place_ship_randomly(computer_board, size)
-
-# === Drawing Functions ===
-def draw_grid(board, offset_x, offset_y, show_ships=False):
-    for row in range(Config.GRID_SIZE):
-        for col in range(Config.GRID_SIZE):
-            x = offset_x + col * Config.CELL_SIZE
-            y = offset_y + row * Config.CELL_SIZE
-            rect = pygame.Rect(x, y, Config.CELL_SIZE, Config.CELL_SIZE)
-            pygame.draw.rect(screen, Config.WHITE, rect, 1)
-
-            cell = board[row][col]
-            if cell == 'M':
-                pygame.draw.circle(screen, Config.BLUE, rect.center, Config.CELL_SIZE // 6)
-            elif cell == 'X':
-                pygame.draw.line(screen, Config.RED, rect.topleft, rect.bottomright, 2)
-                pygame.draw.line(screen, Config.RED, rect.topright, rect.bottomleft, 2)
-            elif show_ships and cell == 'S':
-                pygame.draw.rect(screen, Config.BLUE, rect.inflate(-4, -4))
-
-def draw_text_center(text, x, y, font_size=30):
-    font = pygame.font.SysFont(None, font_size)
-    surface = font.render(text, True, Config.WHITE)
-    rect = surface.get_rect(center=(x, y))
-    screen.blit(surface, rect)
-
-def draw_button(text, x, y, w, h, color, hover_color, action=None):
-    mouse = pygame.mouse.get_pos()
-    click = pygame.mouse.get_pressed()
-    rect = pygame.Rect(x, y, w, h)
-    pygame.draw.rect(screen, hover_color if rect.collidepoint(mouse) else color, rect)
-    font = pygame.font.SysFont(None, 30)
-    text_surf = font.render(text, True, Config.WHITE)
-    text_rect = text_surf.get_rect(center=rect.center)
-    screen.blit(text_surf, text_rect)
-    if rect.collidepoint(mouse) and click[0] == 1 and action:
-        action()
-
-def draw_text_input_box():
-    font = pygame.font.SysFont(None, 36)
-    prompt = font.render("Enter your name:", True, Config.WHITE)
-    screen.blit(prompt, (Config.WIDTH // 2 - 150, Config.HEIGHT // 2 - 60))
-    input_box = pygame.Rect(Config.WIDTH // 2 - 150, Config.HEIGHT // 2, 300, 40)
-    pygame.draw.rect(screen, Config.WHITE, input_box, 2)
-    name_surface = font.render(user_text, True, Config.WHITE)
-    screen.blit(name_surface, (input_box.x + 10, input_box.y + 5))
 
 # === Button Actions ===
 def start_game():
@@ -208,30 +164,30 @@ while running:
         ai_turn_pending = False
 
     if game_state == "menu":
-        draw_button("Play", Config.WIDTH // 2 - 75, Config.HEIGHT // 2 - 50, 150, 50, Config.GREEN, Config.DARK_GREEN, start_game)
-        draw_button("Settings", Config.WIDTH // 2 - 75, Config.HEIGHT // 2 + 20, 150, 50, Config.GRAY, Config.DARK_GRAY, show_settings)
+        draw_button(screen, "Play", Config.WIDTH // 2 - 75, Config.HEIGHT // 2 - 50, 150, 50, Config.GREEN, Config.DARK_GREEN, start_game)
+        draw_button(screen, "Settings", Config.WIDTH // 2 - 75, Config.HEIGHT // 2 + 20, 150, 50, Config.GRAY, Config.DARK_GRAY, show_settings)
 
     elif game_state == "settings":
-        draw_text_input_box()
+        draw_text_input_box(screen, user_text)
 
     elif game_state == "placing":
-        draw_grid(player_board, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y, show_ships=True)
-        draw_text_center(f"Place ship of length {Config.SHIP_SIZES[ship_index]} ({'H' if orientation == 'h' else 'V'})", Config.WIDTH // 2, 50)
-        draw_button("Toggle H/V", Config.WIDTH - 160, 50, 140, 40, Config.GRAY, Config.DARK_GRAY, toggle_orientation)
-        draw_button("Undo Last Ship", Config.WIDTH - 160, 100, 140, 40, Config.GRAY, Config.DARK_GRAY, undo_last_ship)
+        draw_grid(screen, player_board, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y, show_ships=True)
+        draw_text_center(screen, f"Place ship of length {Config.SHIP_SIZES[ship_index]} ({'H' if orientation == 'h' else 'V'})", Config.WIDTH // 2, 50)
+        draw_button(screen, "Toggle H/V", Config.WIDTH - 160, 50, 140, 40, Config.GRAY, Config.DARK_GRAY, toggle_orientation)
+        draw_button(screen, "Undo Last Ship", Config.WIDTH - 160, 100, 140, 40, Config.GRAY, Config.DARK_GRAY, undo_last_ship)
 
     elif game_state == "playing":
-        draw_text_center("Your Fleet", Config.BOARD_OFFSET_X + Config.GRID_WIDTH // 2, Config.BOARD_OFFSET_Y - 30)
-        draw_text_center("Enemy Waters", Config.ENEMY_OFFSET_X + Config.GRID_WIDTH // 2, Config.BOARD_OFFSET_Y - 30)
-        draw_grid(player_board, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y, show_ships=True)
-        draw_grid(player_attacks, Config.ENEMY_OFFSET_X, Config.BOARD_OFFSET_Y)
-        draw_text_center(f"Admiral {player_name}", 100, 20)
+        draw_text_center(screen, "Your Fleet", Config.BOARD_OFFSET_X + Config.GRID_WIDTH // 2, Config.BOARD_OFFSET_Y - 30)
+        draw_text_center(screen, "Enemy Waters", Config.ENEMY_OFFSET_X + Config.GRID_WIDTH // 2, Config.BOARD_OFFSET_Y - 30)
+        draw_grid(screen, player_board, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y, show_ships=True)
+        draw_grid(screen, player_attacks, Config.ENEMY_OFFSET_X, Config.BOARD_OFFSET_Y)
+        draw_text_center(screen, f"Admiral {player_name}", 100, 20)
         if computer_ships == 0:
-            draw_text_center(f"{player_name or 'You'} win! Click Restart", Config.WIDTH // 2, Config.HEIGHT // 2 - 50)
-            draw_button("Restart", Config.WIDTH // 2 - 75, Config.HEIGHT // 2, 150, 50, Config.GREEN, Config.DARK_GREEN, restart_game)
+            draw_text_center(screen, f"{player_name or 'You'} win! Click Restart", Config.WIDTH // 2, Config.HEIGHT // 2 - 50)
+            draw_button(screen, "Restart", Config.WIDTH // 2 - 75, Config.HEIGHT // 2, 150, 50, Config.GREEN, Config.DARK_GREEN, restart_game)
         elif player_ships == 0:
-            draw_text_center(f"{player_name or 'You'} lost! Click Restart", Config.WIDTH // 2, Config.HEIGHT // 2 - 50)
-            draw_button("Restart", Config.WIDTH // 2 - 75, Config.HEIGHT // 2, 150, 50, Config.GREEN, Config.DARK_GREEN, restart_game)
+            draw_text_center(screen, f"{player_name or 'You'} lost! Click Restart", Config.WIDTH // 2, Config.HEIGHT // 2 - 50)
+            draw_button(screen, "Restart", Config.WIDTH // 2 - 75, Config.HEIGHT // 2, 150, 50, Config.GREEN, Config.DARK_GREEN, restart_game)
 
     pygame.display.flip()
 
