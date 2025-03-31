@@ -3,6 +3,7 @@ import random
 import sys
 import time
 from config import Config
+from board import create_board, place_ship_randomly
 
 pygame.init()
 
@@ -23,30 +24,9 @@ ai_turn_pending = False
 ai_turn_start_time = 0
 
 # === Boards ===
-def create_board():
-    return [['O' for _ in range(Config.GRID_SIZE)] for _ in range(Config.GRID_SIZE)]
-
 player_board = create_board()
 computer_board = create_board()
 player_attacks = [['' for _ in range(Config.GRID_SIZE)] for _ in range(Config.GRID_SIZE)]
-
-def place_ship_randomly(board, size):
-    while True:
-        orientation = random.choice(['h', 'v'])
-        if orientation == 'h':
-            row = random.randint(0, Config.GRID_SIZE - 1)
-            col = random.randint(0, Config.GRID_SIZE - size)
-            if all(board[row][col + i] == 'O' for i in range(size)):
-                for i in range(size):
-                    board[row][col + i] = 'S'
-                break
-        else:
-            row = random.randint(0, Config.GRID_SIZE - size)
-            col = random.randint(0, Config.GRID_SIZE - 1)
-            if all(board[row + i][col] == 'O' for i in range(size)):
-                for i in range(size):
-                    board[row + i][col] = 'S'
-                break
 
 for size in Config.SHIP_SIZES:
     place_ship_randomly(computer_board, size)
