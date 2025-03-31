@@ -31,3 +31,4 @@ class GameState:
         self.ai_turn_start_time = 0
         self.game_state = "menu"
         self.running = True
+    
