@@ -20,7 +20,8 @@ background = pygame.transform.smoothscale(background, (Config.WIDTH, Config.HEIG
 
 # === Game State Instance ===
 state = GameState()
-
+placingScreen = PlacingScreen(screen,state)
+playingScreen = PlayingScreen(screen,state)
 
 
 # === Button Actions ===
@@ -30,15 +31,6 @@ def start_game():
 def show_settings():
     state.game_state = "settings"
 
-def toggle_orientation():
-    state.orientation = 'v' if state.orientation == 'h' else 'h'
-
-def undo_last_ship():
-    if state.placed_ships:
-        ship = state.placed_ships.pop()
-        for row, col in ship:
-            state.player_board[row][col] = 'O'
-        state.ship_index -= 1
 
 def restart_game():
     state.reset_all()
@@ -67,10 +59,10 @@ while state.running:
                         state.user_text += event.unicode
 
         elif state.game_state == "placing":
-            PlacingScreen.handleEvent(event,state)
+            placingScreen.handleEvent(event,state)
 
         elif state.game_state == "playing": 
-            PlayingScreen.handleEvent(event,state)
+            playingScreen.handleEvent(event,state)
 
     if state.ai_turn_pending and current_time - state.ai_turn_start_time >= 1000:
         while True:
@@ -92,13 +84,9 @@ while state.running:
         draw_text_input_box(screen, state.user_text)
 
     elif state.game_state == "placing":
-        draw_grid(screen, state.player_board, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y, show_ships=True)
-        draw_text_center(screen, f"Place ship of length {Config.SHIP_SIZES[state.ship_index]} ({'H' if state.orientation == 'h' else 'V'})", Config.WIDTH // 2, 50)
-        draw_button(screen, "Toggle H/V", Config.WIDTH - 160, 50, 140, 40, Config.GRAY, Config.DARK_GRAY, toggle_orientation)
-        draw_button(screen, "Undo Last Ship", Config.WIDTH - 160, 100, 140, 40, Config.GRAY, Config.DARK_GRAY, undo_last_ship)
-
+       placingScreen.draw(screen,state)
     elif state.game_state == "playing":
-        PlayingScreen.draw(screen,state)
+        playingScreen.draw(screen,state)
         
     pygame.display.flip()
 

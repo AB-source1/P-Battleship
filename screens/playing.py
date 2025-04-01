@@ -5,7 +5,12 @@ from game_state import GameState
 from util import get_grid_pos
  
 class PlayingScreen:
-    def handleEvent(event: pygame.event,state:GameState):
+    
+    def __init__(self,screen,state:GameState):
+        self.screen = screen
+        self.state = state
+    
+    def handleEvent(self,event: pygame.event,state:GameState):
         if  event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not state.ai_turn_pending:
             row, col = get_grid_pos(event.pos, Config.ENEMY_OFFSET_X, Config.BOARD_OFFSET_Y)
             if row is not None and state.player_attacks[row][col] == '':
@@ -19,7 +24,7 @@ class PlayingScreen:
                 state.ai_turn_start_time = pygame.time.get_ticks() # current time
         return
     
-    def draw(screen,state:GameState):
+    def draw(self,screen,state:GameState):
         draw_text_center(screen, "Your Fleet", Config.BOARD_OFFSET_X + Config.GRID_WIDTH // 2, Config.BOARD_OFFSET_Y - 30)
         draw_text_center(screen, "Enemy Waters", Config.ENEMY_OFFSET_X + Config.GRID_WIDTH // 2, Config.BOARD_OFFSET_Y - 30)
         draw_grid(screen, state.player_board, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y, show_ships=True)
