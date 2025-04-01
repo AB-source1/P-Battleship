@@ -4,6 +4,8 @@ from config import Config
 from game_state import GameState
 from util import get_grid_pos
  
+ # a Class that handles all the actions in settins screen
+ 
 class SettingsScreen:
     def __init__(self,screen,state:GameState):
         self.screen = screen
