@@ -22,3 +22,5 @@ class Config:
     GRAY = (70, 70, 70)
     DARK_GRAY = (100, 100, 100)
     BLACK = (0, 0, 0)
+    PREVIEW_GREEN = (0, 255, 0, 100)
+    PREVIEW_RED = (255, 0, 0, 100)

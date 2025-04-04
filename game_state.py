@@ -25,7 +25,6 @@ class GameState:
         self.user_text = ""
         self.player_name = ""
         self.ship_index = 0
-        self.placed_ships = []
         self.ai_turn_pending = False
         self.ai_turn_start_time = 0
         self.game_state = "menu"
