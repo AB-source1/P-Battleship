@@ -22,7 +22,8 @@ class PlacingScreen:
             ship = self.placed_ships.pop()
             for row, col in ship:
                 self.state.player_board[row][col] = 'O'
-            self.draggable_ships.append(DraggableShip(len(ship), 200, 200)) #TODO store original ship in placed ships
+            index = Config.SHIP_SIZES.index(len(ship))
+            self.draggable_ships.append(DraggableShip(len(ship),  100 + Config.GRID_WIDTH, 100 + index * 60)) 
             
     def checkLastship(self,state:GameState):
         if len(self.draggable_ships) == 0:
