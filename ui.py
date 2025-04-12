@@ -1,6 +1,8 @@
 import pygame
 from config import Config
 
+button_states = {}
+
 def draw_grid(screen, board, offset_x, offset_y, show_ships=False):
     for row in range(Config.GRID_SIZE):
         for col in range(Config.GRID_SIZE):
@@ -28,13 +30,29 @@ def draw_button(screen, text, x, y, w, h, color, hover_color, action=None):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
     rect = pygame.Rect(x, y, w, h)
+
     pygame.draw.rect(screen, hover_color if rect.collidepoint(mouse) else color, rect)
+
     font = pygame.font.SysFont(None, 30)
     text_surf = font.render(text, True, Config.WHITE)
     text_rect = text_surf.get_rect(center=rect.center)
     screen.blit(text_surf, text_rect)
-    if rect.collidepoint(mouse) and click[0] == 1 and action:
-        action()
+
+    # Unique key for this button
+    key = f"{text}-{x}-{y}"
+    if key not in button_states:
+        button_states[key] = False
+
+    if rect.collidepoint(mouse):
+        if click[0] == 1 and not button_states[key]:
+            button_states[key] = True
+            if action:
+                action()
+        elif click[0] == 0:
+            button_states[key] = False
+    else:
+        button_states[key] = False
+
 
 def draw_text_input_box(screen, user_text):
     font = pygame.font.SysFont(None, 36)

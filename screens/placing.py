@@ -20,10 +20,10 @@ class PlacingScreen:
     def undo_last_ship(self):
         if len (self.placed_ships)>0:
             ship = self.placed_ships.pop()
-            for row, col in ship:
+            for row, col in ship.coords:
                 self.state.player_board[row][col] = 'O'
-            index = Config.SHIP_SIZES.index(len(ship))
-            self.draggable_ships.append(DraggableShip(len(ship),  100 + Config.GRID_WIDTH, 100 + index * 60)) 
+            ship.place([])
+            self.draggable_ships.append(ship) 
             
     def checkLastship(self,state:GameState):
         if len(self.draggable_ships) == 0:
@@ -60,7 +60,8 @@ class PlacingScreen:
                             state.player_board[row + i][col] = 'S'
                             coords.append((row + i, col))
             if fits:
-                self.placed_ships.append(coords)
+                ship.place(coords)
+                self.placed_ships.append(ship)
                 self.draggable_ships.remove(ship)
                 self.checkLastship(state)
         return
@@ -75,7 +76,7 @@ class PlacingScreen:
 
     def tryStartDragging(self, event: pygame.event, state: GameState):
         for ship in self.draggable_ships:
-            if ship.rect.collidepoint(event.pos) and not ship.dragging:
+            if ship.image.collidepoint(event.pos) and not ship.dragging:
                 ship.dragging = True
         return
 
