@@ -18,22 +18,20 @@ class PlacingScreen:
         self.orientation = 'v' if self.orientation == 'h' else 'h'
 
     def undo_last_ship(self):
-        if self.placed_ships:
+        if len (self.placed_ships)>0:
             ship = self.placed_ships.pop()
             for row, col in ship:
                 self.state.player_board[row][col] = 'O'
-            self.state.ship_index -= 1
+            self.draggable_ships.append(DraggableShip(len(ship), 200, 200)) #TODO store original ship in placed ships
             
     def checkLastship(self,state:GameState):
         if len(self.draggable_ships) == 0:
             state.game_state = "playing"
             state.player_ships = state.count_ships(state.player_board)
 
-    def placeShip(self, event: pygame.event, state: GameState):
-        row, col = get_grid_pos(
-            event.pos, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y)
+    def placeShip(self, row, col, ship, state: GameState):
         if row is not None and len(self.draggable_ships) > 0:
-            size = self.draggable_ships[0].size
+            size = ship.size
             coords = []
             fits = True
             if self.orientation == 'h':
@@ -62,7 +60,7 @@ class PlacingScreen:
                             coords.append((row + i, col))
             if fits:
                 self.placed_ships.append(coords)
-                self.draggable_ships.pop(0)
+                self.draggable_ships.remove(ship)
                 self.checkLastship(state)
         return
 
@@ -85,7 +83,7 @@ class PlacingScreen:
             row, col = get_grid_pos(
                 event.pos, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y)
             if row != None and col != None:
-                self.placeShip(event, state)
+                self.placeShip(row, col, self.draggable_ships[0], state)
             else:
                 self.tryStartDragging(event, state)
         elif event.type == pygame.MOUSEMOTION:
@@ -101,12 +99,10 @@ class PlacingScreen:
                     if preview_cells:
                         valid = all(state.player_board[r][c] == 'O' for r, c in preview_cells)
                         if valid:
-                            for r, c in preview_cells:
-                                state.player_board[r][c] = 'S'
-                            self.placed_ships.append(preview_cells)
-                            self.draggable_ships.remove(ship)
+                            (row, col) = preview_cells[0]
+                            self.placeShip(row, col,ship,state)
                             break
-            self.checkLastship(state)
+            
 
         return
 
