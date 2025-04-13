@@ -78,16 +78,16 @@ class PlacingScreen:
         for ship in self.draggable_ships:
             if ship.image.collidepoint(event.pos) and not ship.dragging:
                 ship.dragging = True
-        return
+                return True
+        return False
 
     def handleEvent(self, event: pygame.event, state: GameState):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            row, col = get_grid_pos(
-                event.pos, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y)
-            if row != None and col != None:
-                self.placeShip(row, col, self.draggable_ships[0], state)
-            else:
-                self.tryStartDragging(event, state)
+            if self.tryStartDragging(event, state) == False :
+                row, col = get_grid_pos(
+                    event.pos, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y)
+                if row != None and col != None:
+                    self.placeShip(row, col, self.draggable_ships[0], state)
         elif event.type == pygame.MOUSEMOTION:
             for ship in self.draggable_ships:
                 if ship.dragging:
