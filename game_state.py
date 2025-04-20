@@ -2,8 +2,10 @@ from board import create_board, place_ship_randomly
 from config import Config
 
 class GameState:
-    def __init__(self):
-        self.reset_all()
+    def __init__(self,reset_callback):
+        self.reset_callback = reset_callback
+        self.reset_all() 
+        self.audio_enabled = True
 
     def reset(self):
         self.player_board = create_board()
@@ -29,4 +31,6 @@ class GameState:
         self.ai_turn_start_time = 0
         self.game_state = "menu"
         self.running = True
+        self.reset_callback()
+        
     

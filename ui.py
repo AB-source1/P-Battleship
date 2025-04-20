@@ -1,7 +1,49 @@
+import sys 
 import pygame
+from functools import partial # new <----- figure this out
 from config import Config
 
+
 button_states = {}
+
+def draw_top_bar(screen, state):
+    """Draws a persistent task‑bar with Restart / Audio / Quit buttons."""
+    # --- background strip -------------------------------------------------
+    bar_rect = pygame.Rect(0, 0, Config.WIDTH, Config.TOP_BAR_HEIGHT)
+    pygame.draw.rect(screen, Config.GRAY, bar_rect)
+
+    # --- button callbacks -------------------------------------------------
+    def restart_game():
+        state.reset_all()
+        
+
+    def toggle_audio():
+        state.audio_enabled = not state.audio_enabled
+        pygame.mixer.music.set_volume(1 if state.audio_enabled else 0)
+
+    def close_game():
+        state.running = False
+        pygame.quit()
+        sys.exit()
+
+    # --- buttons ----------------------------------------------------------
+    y = 5
+    draw_button(screen, "Restart",
+                10, y, 110, 30,
+                Config.GREEN, Config.DARK_GREEN,
+                restart_game)
+
+    audio_label = "Audio: On" if state.audio_enabled else "Audio: Off"
+    
+    draw_button(screen, audio_label,
+                Config.WIDTH - 220, y, 120, 30,
+                Config.GRAY, Config.DARK_GRAY,
+                toggle_audio)
+
+    draw_button(screen, "Close",
+                Config.WIDTH - 100, y, 90, 30,
+                Config.RED, Config.DARK_GRAY,
+                close_game)
 
 def draw_grid(screen, board, offset_x, offset_y, show_ships=False):
     for row in range(Config.GRID_SIZE):
@@ -51,7 +93,34 @@ def draw_button(screen, text, x, y, w, h, color, hover_color, action=None):
         elif click[0] == 0:
             button_states[key] = False
     else:
-        button_states[key] = False
+        button_states[key] = False  
+
+def pop_up(screen,yes_callback,no_callback):
+
+    
+    overlay = pygame.Surface((Config.WIDTH, Config.HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 180))          # 70 % opaque black
+    screen.blit(overlay, (0, 0))
+
+    # dialog box
+    box_w, box_h = 400, 180
+    box_rect = pygame.Rect((Config.WIDTH - box_w)//2,
+                            (Config.HEIGHT - box_h)//2,
+                            box_w, box_h)
+    pygame.draw.rect(screen, Config.DARK_GRAY, box_rect)
+    pygame.draw.rect(screen, Config.WHITE,     box_rect, 2)
+
+    # text
+    draw_text_center(screen, "Restart game?", box_rect.centerx, box_rect.y + 40, 36)
+    draw_text_center(screen, "All progress will be lost.",
+                        box_rect.centerx, box_rect.y + 80, 24)
+
+    # buttons
+    draw_button(screen, "Yes", box_rect.x + 60,  box_rect.y + 120,
+                100, 40, Config.GREEN, Config.DARK_GREEN, yes_callback)
+
+    draw_button(screen, "No",  box_rect.right - 160, box_rect.y + 120,
+                100, 40, Config.RED,   Config.DARK_GRAY, no_callback)
 
 
 def draw_text_input_box(screen, user_text):

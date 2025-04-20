@@ -14,24 +14,25 @@ pygame.init()
 # === Pygame Setup ===
 screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT))
 pygame.display.set_caption("Battleship")
-background = pygame.image.load("image.jpeg")
+background = pygame.image.load("resources\\images\\image.jpeg")
 background = pygame.transform.smoothscale(background, (Config.WIDTH, Config.HEIGHT))
 
+
+
+placingScreen = None
+
+def restart_game():
+    print("restarting")
+    if placingScreen:
+        placingScreen.reset_ship()
+    
+
 # === Game State Instance ===
-state = GameState()
+state = GameState(restart_game)
 placingScreen = PlacingScreen(screen,state)
 playingScreen = PlayingScreen(screen,state)
 settingsScreen = SettingsScreen(screen,state)
 menuScreen = MenuScreen(screen,state)
-
-
-
-# === Button Actions ===
-
-
-def restart_game():
-    state.reset_all()
-
 
 
 # === Main Loop ===

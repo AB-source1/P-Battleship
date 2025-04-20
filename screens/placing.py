@@ -1,6 +1,6 @@
 import pygame
 from DraggableShip import DraggableShip
-from ui import draw_grid, draw_text_center, draw_button, draw_text_input_box
+from ui import draw_grid, draw_text_center, draw_button, draw_text_input_box, draw_top_bar
 from config import Config
 from game_state import GameState
 from util import get_grid_pos
@@ -16,6 +16,11 @@ class PlacingScreen:
         self.placed_ships = []
     def toggle_orientation(self):
         self.orientation = 'v' if self.orientation == 'h' else 'h'
+
+    def reset_ship(self):
+        self.placed_ships = []
+        self.draggable_ships = [DraggableShip(
+            size, 100 + Config.GRID_WIDTH, 100 + i * 60) for i, size in enumerate(Config.SHIP_SIZES)]
 
     def undo_last_ship(self):
         if len (self.placed_ships)>0:
@@ -87,7 +92,7 @@ class PlacingScreen:
                 row, col = get_grid_pos(
                     event.pos, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y)
                 if row != None and col != None:
-                    self.placeShip(row, col, self.draggable_ships[0], state)
+                    self.placeShip(row, col, self.draggable_ships   [0], state)
         elif event.type == pygame.MOUSEMOTION:
             for ship in self.draggable_ships:
                 if ship.dragging:
@@ -109,15 +114,17 @@ class PlacingScreen:
         return
 
     def draw(self, screen, state: GameState):
+        
+        draw_top_bar(screen, state)
 
         draw_grid(screen, state.player_board, Config.BOARD_OFFSET_X,
                   Config.BOARD_OFFSET_Y, show_ships=True)
         if len(self.draggable_ships) > 0:
             draw_text_center(
             screen, f"Place ship of length {self.draggable_ships[0].size} ({'H' if self.orientation == 'h' else 'V'})", Config.WIDTH // 2, 50)
-        draw_button(screen, "Toggle H/V", Config.WIDTH - 160, 50, 140,
+        draw_button(screen, "Toggle H/V", Config.WIDTH - 160, 50 + Config.TOP_BAR_HEIGHT, 140,
                     40, Config.GRAY, Config.DARK_GRAY, self.toggle_orientation)
-        draw_button(screen, "Undo Last Ship", Config.WIDTH - 160, 100,
+        draw_button(screen, "Undo Last Ship", Config.WIDTH - 160, 100 + Config.TOP_BAR_HEIGHT,
                     140, 40, Config.GRAY, Config.DARK_GRAY, self.undo_last_ship)
         for ship in self.draggable_ships:
             if ship.dragging:

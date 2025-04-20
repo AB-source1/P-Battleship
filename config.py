@@ -13,6 +13,9 @@ class Config:
     ENEMY_OFFSET_X = BOARD_OFFSET_X + GRID_WIDTH + SPACE_BETWEEN
     BOARD_OFFSET_Y = (HEIGHT - GRID_WIDTH) // 2
 
+    # top bar   
+    TOP_BAR_HEIGHT = 40
+
     # Colors
     WHITE = (255, 255, 255)
     RED = (255, 0, 0)
