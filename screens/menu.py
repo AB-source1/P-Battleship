@@ -2,7 +2,7 @@ import pygame
 from ui import draw_grid, draw_text_center, draw_button, draw_text_input_box
 from config import Config
 from game_state import GameState
-from util import get_grid_pos
+from board import get_grid_pos
  
 class MenuScreen:
     def __init__(self,screen,state:GameState):

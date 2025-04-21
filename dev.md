@@ -40,6 +40,12 @@ pull latest by clicking the Pull icon (3rd icon from the right, in the section t
 
 # 🛠 How to Add a New Screen to P-Battleship
 
+make sure pygame is installed using the code below in terminal 
+```python
+pip install pygame 
+```
+
+
 This guide walks you through creating a new screen in the P-Battleship project using Python and pygame.
 
 ---

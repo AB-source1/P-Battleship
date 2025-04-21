@@ -1,5 +1,51 @@
+import sys
 import pygame
+from functools import partial
 from config import Config
+from board import Cell  # <<<< New import
+
+button_states = {}
+
+def draw_top_bar(screen, state):
+    bar_rect = pygame.Rect(0, 0, Config.WIDTH, Config.TOP_BAR_HEIGHT)
+    pygame.draw.rect(screen, Config.GRAY, bar_rect)
+
+    def restart_game():
+        state.reset_all()
+
+    def toggle_audio():
+        state.audio_enabled = not state.audio_enabled
+        pygame.mixer.music.set_volume(1 if state.audio_enabled else 0)
+
+    def close_game():
+        state.running = False
+        pygame.quit()
+        sys.exit()
+
+    y = 5
+    draw_button(screen, "Restart", 10, y, 110, 30,
+            Config.GREEN, Config.DARK_GREEN,
+            lambda: setattr(state, 'show_restart_modal', True))
+
+
+    audio_label = "Audio: On" if state.audio_enabled else "Audio: Off"
+    draw_button(screen, audio_label, Config.WIDTH - 220, y, 120, 30, Config.GRAY, Config.DARK_GRAY, toggle_audio)
+
+    draw_button(screen, "Close",
+            Config.WIDTH - 100, y, 90, 30,
+            Config.RED, Config.DARK_GRAY,
+            lambda: setattr(state, 'show_quit_modal', True))
+
+
+
+def _cell_color(cell: Cell, show_ships: bool):
+    if cell == Cell.HIT:
+        return Config.RED
+    elif cell == Cell.MISS:
+        return Config.BLUE
+    elif cell == Cell.SHIP and show_ships:
+        return Config.BLUE
+    return None  # EMPTY or hidden ship
 
 def draw_grid(screen, board, offset_x, offset_y, show_ships=False):
     for row in range(Config.GRID_SIZE):
@@ -10,13 +56,16 @@ def draw_grid(screen, board, offset_x, offset_y, show_ships=False):
             pygame.draw.rect(screen, Config.WHITE, rect, 1)
 
             cell = board[row][col]
-            if cell == 'M':
-                pygame.draw.circle(screen, Config.BLUE, rect.center, Config.CELL_SIZE // 6)
-            elif cell == 'X':
-                pygame.draw.line(screen, Config.RED, rect.topleft, rect.bottomright, 2)
-                pygame.draw.line(screen, Config.RED, rect.topright, rect.bottomleft, 2)
-            elif show_ships and cell == 'S':
-                pygame.draw.rect(screen, Config.BLUE, rect.inflate(-4, -4))
+            color = _cell_color(cell, show_ships)
+            if color:
+                if cell == Cell.MISS:
+                    pygame.draw.circle(screen, color, rect.center, Config.CELL_SIZE // 6)
+                elif cell == Cell.HIT:
+                    pygame.draw.line(screen, color, rect.topleft, rect.bottomright, 2)
+                    pygame.draw.line(screen, color, rect.topright, rect.bottomleft, 2)
+                else:  # visible ship
+                    pygame.draw.rect(screen, color, rect.inflate(-4, -4))
+
 
 def draw_text_center(screen, text, x, y, font_size=30):
     font = pygame.font.SysFont(None, font_size)
@@ -29,12 +78,48 @@ def draw_button(screen, text, x, y, w, h, color, hover_color, action=None):
     click = pygame.mouse.get_pressed()
     rect = pygame.Rect(x, y, w, h)
     pygame.draw.rect(screen, hover_color if rect.collidepoint(mouse) else color, rect)
+
     font = pygame.font.SysFont(None, 30)
     text_surf = font.render(text, True, Config.WHITE)
     text_rect = text_surf.get_rect(center=rect.center)
     screen.blit(text_surf, text_rect)
-    if rect.collidepoint(mouse) and click[0] == 1 and action:
-        action()
+
+    key = f"{text}-{x}-{y}"
+    if key not in button_states:
+        button_states[key] = False
+
+    if rect.collidepoint(mouse):
+        if click[0] == 1 and not button_states[key]:
+            button_states[key] = True
+            if action:
+                action()
+        elif click[0] == 0:
+            button_states[key] = False
+    else:
+        button_states[key] = False
+
+
+
+def draw_modal(screen, title, subtitle, on_yes, on_no):
+    overlay = pygame.Surface((Config.WIDTH, Config.HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 180))
+    screen.blit(overlay, (0, 0))
+
+    box_w, box_h = 400, 180
+    box_rect = pygame.Rect((Config.WIDTH - box_w)//2,
+                           (Config.HEIGHT - box_h)//2,
+                           box_w, box_h)
+    pygame.draw.rect(screen, Config.DARK_GRAY, box_rect)
+    pygame.draw.rect(screen, Config.WHITE, box_rect, 2)
+
+    draw_text_center(screen, title, box_rect.centerx, box_rect.y + 40, 36)
+    draw_text_center(screen, subtitle, box_rect.centerx, box_rect.y + 80, 24)
+
+    draw_button(screen, "Yes", box_rect.x + 60, box_rect.y + 120,
+                100, 40, Config.GREEN, Config.DARK_GREEN, on_yes)
+
+    draw_button(screen, "No", box_rect.right - 160, box_rect.y + 120,
+                100, 40, Config.RED, Config.DARK_GRAY, on_no)
 
 def draw_text_input_box(screen, user_text):
     font = pygame.font.SysFont(None, 36)
