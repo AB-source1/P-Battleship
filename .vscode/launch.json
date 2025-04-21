@@ -9,7 +9,7 @@
             "name": "Python Debugger",
             "type": "debugpy",
             "request": "launch",
-            "program": "Oneboard.py",
+            "program": "Main.py",
             "console": "integratedTerminal"
         }
     ]
