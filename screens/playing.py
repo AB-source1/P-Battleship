@@ -2,8 +2,7 @@ import pygame
 from ui import draw_grid, draw_text_center, draw_button, draw_text_input_box, draw_top_bar
 from config import Config
 from game_state import GameState
-from util import get_grid_pos
-from board import Cell  # NEW
+from board import Cell,  get_grid_pos  # NEW
 
 class PlayingScreen:
 
