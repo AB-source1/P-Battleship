@@ -3,7 +3,6 @@ import pygame
 from functools import partial # new <----- figure this out
 from config import Config
 
-
 button_states = {}
 
 def draw_top_bar(screen, state):
@@ -14,6 +13,8 @@ def draw_top_bar(screen, state):
 
     # --- button callbacks -------------------------------------------------
     def restart_game():
+                                                             
+        #pop_up(screen,state.reset_all,None)
         state.reset_all()
         
 
