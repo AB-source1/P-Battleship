@@ -45,23 +45,30 @@ class SettingsScreen:
         draw_text_center(screen, "Select Grid Size", Config.WIDTH // 2, 80, 40)
 
         # Preset buttons
-        draw_button(screen, "5x5", Config.WIDTH // 2 - 200, 150, 100, 40,
-            Config.GRAY, Config.DARK_GRAY, lambda: self.apply_grid_size(5))
+        # Only show presets if custom input is NOT active
+        if not self.show_custom_input:
+            draw_button(screen, "5x5", Config.WIDTH // 2 - 200, 150, 100, 40,
+                Config.GRAY, Config.DARK_GRAY, lambda: self.apply_grid_size(5))
 
-        draw_button(screen, "10x10", Config.WIDTH // 2 - 50, 150, 100, 40,
-                    Config.GRAY, Config.DARK_GRAY, lambda: self.apply_grid_size(10))
+            draw_button(screen, "10x10", Config.WIDTH // 2 - 50, 150, 100, 40,
+                Config.GRAY, Config.DARK_GRAY, lambda: self.apply_grid_size(10))
 
-        draw_button(screen, "15x15", Config.WIDTH // 2 + 100, 150, 100, 40,
-                    Config.GRAY, Config.DARK_GRAY, lambda: self.apply_grid_size(15))
+            draw_button(screen, "15x15", Config.WIDTH // 2 + 100, 150, 100, 40,
+                Config.GRAY, Config.DARK_GRAY, lambda: self.apply_grid_size(15))
 
 
-        # Custom size logic
-        draw_button(screen, "Custom", Config.WIDTH // 2 - 75, 220, 150, 40,
-                    Config.GREEN, Config.DARK_GREEN, self.toggle_custom_input)
+
+            # Custom size logic
+            draw_button(screen, "Custom", Config.WIDTH // 2 - 75, 220, 150, 40,
+                        Config.GREEN, Config.DARK_GREEN, self.toggle_custom_input)
 
         if self.show_custom_input:
             draw_text_center(screen, "Enter size (5-20):", Config.WIDTH // 2, 280, 24)
             draw_text_input_box(screen, self.grid_size_input)
+
+            draw_button(screen, "Back", Config.WIDTH // 2 - 50, 350, 100, 40,
+                        Config.GRAY, Config.DARK_GRAY, self.toggle_custom_input)
+
 
     def toggle_custom_input(self):
         self.show_custom_input = not self.show_custom_input
