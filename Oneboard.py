@@ -8,7 +8,7 @@ from screens.placing import PlacingScreen
 from screens.settings import SettingsScreen
 from screens.menu import MenuScreen
 from board import Cell
-from ui import draw_restart_modal  # ✅ NEW
+from ui import draw_modal  # ✅ Unified modal drawer
 
 pygame.init()
 
@@ -29,16 +29,17 @@ playingScreen = PlayingScreen(screen, state)
 settingsScreen = SettingsScreen(screen, state)
 menuScreen = MenuScreen(screen, state)
 
+# ──────────────────────────────────────────────────────────────────────────
 while state.running:
     screen.blit(background, (0, 0))
     current_time = pygame.time.get_ticks()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            state.running = False
+            state.show_quit_modal = True  # ✅ Confirm on close button
 
-        if state.show_restart_modal:
-            continue  # skip normal game input when modal is open
+        if state.show_restart_modal or state.show_quit_modal:
+            continue  # ✅ Pause input to screens while modal is open
 
         if state.game_state == "settings":
             settingsScreen.handleEvent(event, state)
@@ -47,6 +48,7 @@ while state.running:
         elif state.game_state == "playing":
             playingScreen.handleEvent(event, state)
 
+    # ───────────────────── AI TURN ─────────────────────
     if state.ai_turn_pending and current_time - state.ai_turn_start_time >= 1000:
         while True:
             r = random.randint(0, Config.GRID_SIZE - 1)
@@ -60,7 +62,7 @@ while state.running:
                 break
         state.ai_turn_pending = False
 
-    # Draw current screen
+    # ───────────────────── DRAW ACTIVE SCREEN ─────────────────────
     if state.game_state == "menu":
         menuScreen.draw(screen, state)
     elif state.game_state == "settings":
@@ -70,16 +72,35 @@ while state.running:
     elif state.game_state == "playing":
         playingScreen.draw(screen, state)
 
-    # Draw modal if active
+    # ───────────────────── MODALS ─────────────────────
     if state.show_restart_modal:
-        def confirm():
+        def confirm_restart():
             state.show_restart_modal = False
             state.reset_all()
 
-        def cancel():
+        def cancel_restart():
             state.show_restart_modal = False
 
-        draw_restart_modal(screen, confirm, cancel)
+        draw_modal(screen,
+                   title="Restart game?",
+                   subtitle="All progress will be lost.",
+                   on_yes=confirm_restart,
+                   on_no=cancel_restart)
+
+    elif state.show_quit_modal:
+        def confirm_quit():
+            state.show_quit_modal = False
+            pygame.quit()
+            sys.exit()
+
+        def cancel_quit():
+            state.show_quit_modal = False
+
+        draw_modal(screen,
+                   title="Quit game?",
+                   subtitle="Are you sure you want to exit?",
+                   on_yes=confirm_quit,
+                   on_no=cancel_quit)
 
     pygame.display.flip()
 

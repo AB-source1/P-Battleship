@@ -7,6 +7,7 @@ class GameState:
         self.reset_callback = reset_callback
         self.reset_all()
         self.show_restart_modal = False 
+        self.show_quit_modal = False
         self.audio_enabled = True
 
     def reset(self):
@@ -34,5 +35,6 @@ class GameState:
         self.ai_turn_start_time = 0
         self.game_state = "menu"
         self.show_restart_modal = False 
+        self.show_quit_modal = False
         self.running = True
         self.reset_callback()

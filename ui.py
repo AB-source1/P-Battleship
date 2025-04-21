@@ -31,7 +31,11 @@ def draw_top_bar(screen, state):
     audio_label = "Audio: On" if state.audio_enabled else "Audio: Off"
     draw_button(screen, audio_label, Config.WIDTH - 220, y, 120, 30, Config.GRAY, Config.DARK_GRAY, toggle_audio)
 
-    draw_button(screen, "Close", Config.WIDTH - 100, y, 90, 30, Config.RED, Config.DARK_GRAY, close_game)
+    draw_button(screen, "Close",
+            Config.WIDTH - 100, y, 90, 30,
+            Config.RED, Config.DARK_GRAY,
+            lambda: setattr(state, 'show_quit_modal', True))
+
 
 
 def _cell_color(cell: Cell, show_ships: bool):
@@ -94,7 +98,9 @@ def draw_button(screen, text, x, y, w, h, color, hover_color, action=None):
     else:
         button_states[key] = False
 
-def pop_up(screen, yes_callback, no_callback):
+
+
+def draw_modal(screen, title, subtitle, on_yes, on_no):
     overlay = pygame.Surface((Config.WIDTH, Config.HEIGHT), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 180))
     screen.blit(overlay, (0, 0))
@@ -106,33 +112,14 @@ def pop_up(screen, yes_callback, no_callback):
     pygame.draw.rect(screen, Config.DARK_GRAY, box_rect)
     pygame.draw.rect(screen, Config.WHITE, box_rect, 2)
 
-    draw_text_center(screen, "Restart game?", box_rect.centerx, box_rect.y + 40, 36)
-    draw_text_center(screen, "All progress will be lost.", box_rect.centerx, box_rect.y + 80, 24)
+    draw_text_center(screen, title, box_rect.centerx, box_rect.y + 40, 36)
+    draw_text_center(screen, subtitle, box_rect.centerx, box_rect.y + 80, 24)
 
-    draw_button(screen, "Yes", box_rect.x + 60, box_rect.y + 120, 100, 40, Config.GREEN, Config.DARK_GREEN, yes_callback)
-    draw_button(screen, "No", box_rect.right - 160, box_rect.y + 120, 100, 40, Config.RED, Config.DARK_GRAY, no_callback)
-
-def draw_restart_modal(screen, on_yes, on_no):
-    overlay = pygame.Surface((Config.WIDTH, Config.HEIGHT), pygame.SRCALPHA)
-    overlay.fill((0, 0, 0, 180))
-    screen.blit(overlay, (0, 0))
-
-    box_w, box_h = 400, 180
-    box_rect = pygame.Rect((Config.WIDTH - box_w)//2,
-                           (Config.HEIGHT - box_h)//2,
-                           box_w, box_h)
-    pygame.draw.rect(screen, Config.DARK_GRAY, box_rect)
-    pygame.draw.rect(screen, Config.WHITE, box_rect, 2)
-
-    draw_text_center(screen, "Restart game?", box_rect.centerx, box_rect.y + 40, 36)
-    draw_text_center(screen, "All progress will be lost.",
-                     box_rect.centerx, box_rect.y + 80, 24)
-
-    draw_button(screen, "Yes", box_rect.x + 60,  box_rect.y + 120,
+    draw_button(screen, "Yes", box_rect.x + 60, box_rect.y + 120,
                 100, 40, Config.GREEN, Config.DARK_GREEN, on_yes)
 
-    draw_button(screen, "No",  box_rect.right - 160, box_rect.y + 120,
-                100, 40, Config.RED,   Config.DARK_GRAY, on_no)
+    draw_button(screen, "No", box_rect.right - 160, box_rect.y + 120,
+                100, 40, Config.RED, Config.DARK_GRAY, on_no)
 
 def draw_text_input_box(screen, user_text):
     font = pygame.font.SysFont(None, 36)
