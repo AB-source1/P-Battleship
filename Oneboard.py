@@ -19,6 +19,8 @@ background = pygame.transform.smoothscale(background, (Config.WIDTH, Config.HEIG
 
 placingScreen = None
 
+Config.update_layout()
+
 def restart_game():
     if placingScreen:
         placingScreen.reset_ship()
