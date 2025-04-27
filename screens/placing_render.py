@@ -19,21 +19,31 @@ class PlacingRender:
 
         draw_grid(screen, state.player_board, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y, show_ships=True)
 
-        if self.logic.draggable_ships:
-            draw_text_center(screen,
-                f"Place ship of length {self.logic.draggable_ships[0].size} ({'H' if self.logic.orientation == 'h' else 'V'})",
-                Config.WIDTH // 2, 50)
+        # Display ship counter
+        draw_text_center(screen,
+                         f"Ships Left: {len(self.logic.ship_queue) + (1 if self.logic.active_ship else 0)}",
+                         Config.WIDTH - 300, 100, 28)
 
-        draw_button(screen, "Toggle H/V", Config.WIDTH - 160, 50 + Config.TOP_BAR_HEIGHT, 140, 40,
-                    Config.GRAY, Config.DARK_GRAY, self.logic.toggle_orientation)
+        # Draw active ship (draggable one)
+        if self.logic.active_ship:
+            self.logic.active_ship.draw(screen)
 
-        draw_button(screen, "Undo Last Ship", Config.WIDTH - 160, 100 + Config.TOP_BAR_HEIGHT, 140, 40,
-                    Config.GRAY, Config.DARK_GRAY, self.logic.undo_last_ship)
+        # Draw preview ship (next one, static)
+        if self.logic.preview_ship:
+            pygame.draw.rect(screen, Config.GRAY,
+                             pygame.Rect(self.logic.preview_area_position(), (Config.CELL_SIZE * self.logic.preview_ship.size, Config.CELL_SIZE)))
+            pygame.draw.rect(screen, Config.WHITE,
+                             pygame.Rect(self.logic.preview_area_position(), (Config.CELL_SIZE * self.logic.preview_ship.size, Config.CELL_SIZE)), 2)
 
-        for ship in self.logic.draggable_ships:
-            if ship.dragging:
-                cells = ship.get_preview_cells(Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y)
-                if cells:
-                    valid = all(state.player_board[r][c] == 0 for r, c in cells)
-                    self.draw_preview(cells, screen, valid)
-            ship.draw(screen)
+        # Buttons
+        draw_button(screen, "Rotate Ship (R)",
+                    Config.WIDTH - 350, Config.HEIGHT // 2 + 100,
+                    140, 40,
+                    Config.GRAY, Config.DARK_GRAY,
+                    lambda: self.logic.active_ship.rotate() if self.logic.active_ship else None)
+
+        draw_button(screen, "Undo Last Ship",
+                    Config.WIDTH - 350, Config.HEIGHT // 2 + 160,
+                    140, 40,
+                    Config.GRAY, Config.DARK_GRAY,
+                    self.logic.undo_last_ship)
