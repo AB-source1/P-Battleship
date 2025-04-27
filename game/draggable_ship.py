@@ -7,6 +7,7 @@ class DraggableShip:
         self.orientation = 'h'
         self.image = pygame.Rect(x, y, size * Config.CELL_SIZE, Config.CELL_SIZE)
         self.dragging = False
+        self.drag_offset = (0, 0)  # NEW
         self.coords = []
 
     def draw(self, surface):
@@ -14,21 +15,31 @@ class DraggableShip:
         pygame.draw.rect(surface, Config.WHITE, self.image, 2)
 
     def rotate(self):
-        # Swap width and height
+        # Rotate the ship (swap width and height)
         w, h = self.image.size
         self.image.size = (h, w)
         self.orientation = 'v' if self.orientation == 'h' else 'h'
 
     def place(self, coords):
-        # Store where this ship is placed on the grid
         self.coords = coords
 
+    def start_dragging(self, mx, my):
+        # Save mouse offset when clicking the ship
+        self.dragging = True
+        self.drag_offset = (self.image.x - mx, self.image.y - my)
+
+    def stop_dragging(self):
+        self.dragging = False
+        self.drag_offset = (0, 0)
+
     def update_position(self, mx, my):
-        # Center the rectangle where the mouse is
-        self.image.center = (mx, my)
+        if self.dragging:
+            # Move smoothly respecting where the ship was clicked
+            self.image.x = mx + self.drag_offset[0]
+            self.image.y = my + self.drag_offset[1]
 
     def get_preview_cells(self, offset_x, offset_y):
-        # Calculate which cells this ship would occupy based on its position
+        # Calculate grid cells that the ship would occupy
         col = (self.image.x - offset_x + Config.CELL_SIZE // 2) // Config.CELL_SIZE
         row = (self.image.y - offset_y + Config.CELL_SIZE // 2) // Config.CELL_SIZE
         cells = []

@@ -77,12 +77,18 @@ class PlacingLogic:
                 return True
         return False
 
-    def handle_event(self, event: pygame.event.Event, state: GameState):
+    def handle_event(self, event: pygame.event.Event, state):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if not self.try_start_dragging(event):
-                row, col = get_grid_pos(event.pos, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y)
-                if row is not None and col is not None:
-                    self.place_ship(row, col, self.draggable_ships[0], state)
+            # Start dragging the ship
+            for ship in self.draggable_ships:
+                if ship.image.collidepoint(event.pos) and not ship.dragging:
+                    ship.start_dragging(*event.pos)
+                    return
+
+            # Place ship manually on click if not dragging
+            row, col = get_grid_pos(event.pos, Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y)
+            if row is not None and col is not None:
+                self.place_ship(row, col, self.draggable_ships[0], state)
 
         elif event.type == pygame.MOUSEMOTION:
             for ship in self.draggable_ships:
@@ -92,7 +98,7 @@ class PlacingLogic:
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             for ship in self.draggable_ships:
                 if ship.dragging:
-                    ship.dragging = False
+                    ship.stop_dragging()
                     preview_cells = ship.get_preview_cells(Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y)
                     if preview_cells:
                         valid = all(state.player_board[r][c] == Cell.EMPTY for r, c in preview_cells)
@@ -100,3 +106,8 @@ class PlacingLogic:
                             row, col = preview_cells[0]
                             self.place_ship(row, col, ship, state)
                             break
+
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_r:
+                if self.draggable_ships:
+                    self.draggable_ships[0].rotate()
