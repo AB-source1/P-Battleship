@@ -24,9 +24,20 @@ class SettingsRender:
             draw_button(screen, "Custom", Config.WIDTH // 2 - 75, 220, 150, 40,
                         Config.GREEN, Config.DARK_GREEN, self.logic.toggle_custom_input)
 
+            # 🛠 NEW: Smart ship generator toggle
+            smart_label = "Smart Ships: ON" if Config.USE_SMART_SHIP_GENERATOR else "Smart Ships: OFF"
+            draw_button(screen, smart_label, Config.WIDTH // 2 - 100, 300, 200, 40,
+                        Config.GREEN if Config.USE_SMART_SHIP_GENERATOR else Config.GRAY,
+                        Config.DARK_GREEN if Config.USE_SMART_SHIP_GENERATOR else Config.DARK_GRAY,
+                        self.toggle_smart_ship_generator)
+
         else:
             draw_text_center(screen, "Enter size (5-20):", Config.WIDTH // 2, 280, 24)
             draw_text_input_box(screen, self.logic.grid_size_input)
 
             draw_button(screen, "Back", Config.WIDTH // 2 - 50, 350, 100, 40,
                         Config.GRAY, Config.DARK_GRAY, self.logic.toggle_custom_input)
+
+    def toggle_smart_ship_generator(self):
+        Config.USE_SMART_SHIP_GENERATOR = not Config.USE_SMART_SHIP_GENERATOR
+        Config.generate_ships_for_grid()

@@ -25,21 +25,41 @@ class Config:
     PREVIEW_GREEN = (0, 255, 0, 100)
     PREVIEW_RED = (255, 0, 0, 100)
 
+    # New smart generator setting
+    USE_SMART_SHIP_GENERATOR = False
+
     @staticmethod
     def generate_ships_for_grid():
-        """Dynamically generate ship sizes based on the grid size."""
-        if Config.GRID_SIZE <= 6:
-            Config.SHIP_SIZES = [3]
-        elif Config.GRID_SIZE <= 8:
-            Config.SHIP_SIZES = [4, 3]
-        elif Config.GRID_SIZE <= 12:
-            Config.SHIP_SIZES = [5, 4, 3]
+        """Dynamically generate ship sizes based on grid size and smart toggle."""
+        if Config.USE_SMART_SHIP_GENERATOR:
+            Config.SHIP_SIZES = []
+
+            if Config.GRID_SIZE <= 6:
+                Config.SHIP_SIZES = [3]
+            elif Config.GRID_SIZE <= 8:
+                Config.SHIP_SIZES = [4, 3]
+            elif Config.GRID_SIZE <= 10:
+                Config.SHIP_SIZES = [5, 4, 3]
+            else:
+                max_ship = max(4, Config.GRID_SIZE // 4)
+                Config.SHIP_SIZES = [max_ship - i for i in range(4)]  # [6,5,4,3] style
+
+                if Config.GRID_SIZE >= 15:
+                    Config.SHIP_SIZES.append(2)
         else:
-            Config.SHIP_SIZES = [6, 5, 4, 3]
+            # Normal simple ships
+            if Config.GRID_SIZE <= 6:
+                Config.SHIP_SIZES = [3]
+            elif Config.GRID_SIZE <= 8:
+                Config.SHIP_SIZES = [4, 3]
+            elif Config.GRID_SIZE <= 12:
+                Config.SHIP_SIZES = [5, 4, 3]
+            else:
+                Config.SHIP_SIZES = [6, 5, 4, 3]
 
     @staticmethod
     def update_layout():
-        """Update layout and regenerate ship list based on grid size."""
+        """Update layout and regenerate ships."""
         padding = 3
         max_cell_w = Config.WIDTH // (2 * Config.GRID_SIZE + padding)
         max_cell_h = Config.HEIGHT // (Config.GRID_SIZE + 4)
@@ -52,4 +72,4 @@ class Config:
         Config.ENEMY_OFFSET_X = Config.BOARD_OFFSET_X + Config.GRID_WIDTH + Config.SPACE_BETWEEN
         Config.BOARD_OFFSET_Y = (Config.HEIGHT - Config.GRID_WIDTH) // 2
 
-        Config.generate_ships_for_grid()  # ✅ Always update ships when grid size changes
+        Config.generate_ships_for_grid()
