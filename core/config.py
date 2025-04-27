@@ -1,3 +1,5 @@
+import random
+
 class Config:
     WIDTH, HEIGHT = 1000, 600
     CELL_SIZE = 40
@@ -25,29 +27,35 @@ class Config:
     PREVIEW_GREEN = (0, 255, 0, 100)
     PREVIEW_RED = (255, 0, 0, 100)
 
-    # New smart generator setting
     USE_SMART_SHIP_GENERATOR = False
 
     @staticmethod
     def generate_ships_for_grid():
-        """Dynamically generate ship sizes based on grid size and smart toggle."""
+        """Dynamically generate ship sizes based on grid size."""
         if Config.USE_SMART_SHIP_GENERATOR:
             Config.SHIP_SIZES = []
+            total_cells = Config.GRID_SIZE * Config.GRID_SIZE
 
-            if Config.GRID_SIZE <= 6:
-                Config.SHIP_SIZES = [3]
-            elif Config.GRID_SIZE <= 8:
-                Config.SHIP_SIZES = [4, 3]
-            elif Config.GRID_SIZE <= 10:
-                Config.SHIP_SIZES = [5, 4, 3]
-            else:
-                max_ship = max(4, Config.GRID_SIZE // 4)
-                Config.SHIP_SIZES = [max_ship - i for i in range(4)]  # [6,5,4,3] style
+            # Target 25%-30% of cells covered
+            min_coverage = int(total_cells * 0.25)
+            max_coverage = int(total_cells * 0.30)
+            target_coverage = random.randint(min_coverage, max_coverage)
 
-                if Config.GRID_SIZE >= 15:
-                    Config.SHIP_SIZES.append(2)
+            current_coverage = 0
+            possible_ship_sizes = list(range(2, min(7, Config.GRID_SIZE // 2 + 1)))  # Ships between size 2 and 6
+
+            while current_coverage < target_coverage and possible_ship_sizes:
+                ship_size = random.choice(possible_ship_sizes)
+
+                # Don't overfill too much
+                if current_coverage + ship_size <= target_coverage + 2:
+                    Config.SHIP_SIZES.append(ship_size)
+                    current_coverage += ship_size
+
+            random.shuffle(Config.SHIP_SIZES)  # Mix order randomly
+
         else:
-            # Normal simple ships
+            # Default normal
             if Config.GRID_SIZE <= 6:
                 Config.SHIP_SIZES = [3]
             elif Config.GRID_SIZE <= 8:
