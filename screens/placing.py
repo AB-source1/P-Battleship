@@ -1,8 +1,8 @@
 import pygame
-from DraggableShip import DraggableShip
+from game.DraggableShip import DraggableShip
 from ui import draw_grid, draw_text_center, draw_button, draw_text_input_box, draw_top_bar
-from config import Config
-from game_state import GameState
+from core.config import Config
+from core.game_state import GameState
 from board import Cell, get_grid_pos  # <-- NEW: use Cell enum
 
 

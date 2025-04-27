@@ -1,5 +1,5 @@
-from board import create_board, place_ship_randomly, Cell  # UPDATED
-from config import Config
+from game.board_helpers import create_board, place_ship_randomly, Cell  # UPDATED
+from core.config import Config
 
 
 class GameState:

@@ -1,7 +1,7 @@
 import pygame
 from ui import draw_text_center, draw_button, draw_text_input_box, draw_top_bar
-from config import Config
-from game_state import GameState
+from core.config import Config
+from core.game_state import GameState
 
 
 class SettingsScreen:
