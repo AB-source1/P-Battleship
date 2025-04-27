@@ -44,7 +44,7 @@ menu_render = MenuRender(menu_logic)
 
 # Now fix real restart function
 def restart_game():
-    placing_logic.reset_ships()
+    placing_logic.reset()
 
 state.reset_callback = restart_game  # Update GameState to use correct restart
 
