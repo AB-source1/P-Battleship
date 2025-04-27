@@ -15,9 +15,10 @@ class DraggableShip:
         pygame.draw.rect(surface, Config.WHITE, self.image, 2)
 
     def rotate(self):
-        # Rotate the ship (swap width and height)
+        center = self.image.center  # ✅ Save center
         w, h = self.image.size
-        self.image.size = (h, w)
+        self.image.size = (h, w)    # Swap width and height
+        self.image.center = center  # ✅ Restore center
         self.orientation = 'v' if self.orientation == 'h' else 'h'
 
     def place(self, coords):

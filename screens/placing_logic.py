@@ -15,6 +15,14 @@ class PlacingLogic:
 
         self.setup_ships()
 
+    def reset(self):
+        """Reset all ship placement state."""
+        self.active_ship = None
+        self.preview_ship = None
+        self.ship_queue = []
+        self.placed_ships = []
+        self.setup_ships()
+
     def setup_ships(self):
         # Create ships and prepare queue
         self.ship_queue = [DraggableShip(size, *self.main_area_position()) for size in Config.SHIP_SIZES]
