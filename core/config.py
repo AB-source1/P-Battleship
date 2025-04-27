@@ -4,9 +4,8 @@ class Config:
 
     DEFAULT_GRID_SIZE = 10
     GRID_SIZE = DEFAULT_GRID_SIZE
-    SHIP_SIZES = [5, 4, 3]
+    SHIP_SIZES = []
 
-    # Layout (recomputed dynamically)
     SPACE_BETWEEN = 100
     GRID_WIDTH = None
     BOARD_OFFSET_X = None
@@ -27,16 +26,30 @@ class Config:
     PREVIEW_RED = (255, 0, 0, 100)
 
     @staticmethod
+    def generate_ships_for_grid():
+        """Dynamically generate ship sizes based on the grid size."""
+        if Config.GRID_SIZE <= 6:
+            Config.SHIP_SIZES = [3]
+        elif Config.GRID_SIZE <= 8:
+            Config.SHIP_SIZES = [4, 3]
+        elif Config.GRID_SIZE <= 12:
+            Config.SHIP_SIZES = [5, 4, 3]
+        else:
+            Config.SHIP_SIZES = [6, 5, 4, 3]
+
+    @staticmethod
     def update_layout():
-        padding = 3  # space between boards in cells
+        """Update layout and regenerate ship list based on grid size."""
+        padding = 3
         max_cell_w = Config.WIDTH // (2 * Config.GRID_SIZE + padding)
-        max_cell_h = Config.HEIGHT // (Config.GRID_SIZE + 4)  # leave space for UI
+        max_cell_h = Config.HEIGHT // (Config.GRID_SIZE + 4)
 
         raw_cell_size = min(max_cell_w, max_cell_h)
-        Config.CELL_SIZE = max(20, min(raw_cell_size, 60))  # ✅ clamp between 20 and 60
+        Config.CELL_SIZE = max(20, min(raw_cell_size, 60))
 
         Config.GRID_WIDTH = Config.GRID_SIZE * Config.CELL_SIZE
         Config.BOARD_OFFSET_X = (Config.WIDTH - (2 * Config.GRID_WIDTH + Config.SPACE_BETWEEN)) // 2
         Config.ENEMY_OFFSET_X = Config.BOARD_OFFSET_X + Config.GRID_WIDTH + Config.SPACE_BETWEEN
         Config.BOARD_OFFSET_Y = (Config.HEIGHT - Config.GRID_WIDTH) // 2
 
+        Config.generate_ships_for_grid()  # ✅ Always update ships when grid size changes
