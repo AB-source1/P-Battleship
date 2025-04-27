@@ -15,16 +15,7 @@ class PlacingLogic:
 
         self.setup_ships()
 
-    def reset(self):
-        """Reset all ship placement state."""
-        self.active_ship = None
-        self.preview_ship = None
-        self.ship_queue = []
-        self.placed_ships = []
-        self.setup_ships()
-
     def setup_ships(self):
-        # Create ships and prepare queue
         self.ship_queue = [DraggableShip(size, *self.main_area_position()) for size in Config.SHIP_SIZES]
         self.update_active_and_preview()
 
@@ -53,12 +44,17 @@ class PlacingLogic:
         if row is None or col is None:
             return False
 
+        if ship.orientation == 'h':
+            col -= ship.size // 2
+        else:
+            row -= ship.size // 2
+
         size = ship.size
         coords = []
         fits = True
 
         if ship.orientation == 'h':
-            if col + size > Config.GRID_SIZE:
+            if col < 0 or col + size > Config.GRID_SIZE or row < 0 or row >= Config.GRID_SIZE:
                 fits = False
             else:
                 for i in range(size):
@@ -70,7 +66,7 @@ class PlacingLogic:
                         self.state.player_board[row][col + i] = Cell.SHIP
                         coords.append((row, col + i))
         else:
-            if row + size > Config.GRID_SIZE:
+            if row < 0 or row + size > Config.GRID_SIZE or col < 0 or col >= Config.GRID_SIZE:
                 fits = False
             else:
                 for i in range(size):
@@ -104,13 +100,30 @@ class PlacingLogic:
             if self.active_ship and self.active_ship.dragging:
                 self.active_ship.stop_dragging()
 
-                if self.try_place_on_grid(self.active_ship):
-                    self.placed_ships.append(self.active_ship)
-                    self.update_active_and_preview()
-                    if not self.active_ship and not self.preview_ship:
-                        # Done placing all ships
-                        state.game_state = "playing"
-                        state.player_ships = state.count_ships(state.player_board)
+                mx, my = self.active_ship.image.center
+
+                col = (mx - Config.BOARD_OFFSET_X) // Config.CELL_SIZE
+                row = (my - Config.BOARD_OFFSET_Y) // Config.CELL_SIZE
+
+                if self.active_ship.orientation == 'h':
+                    col -= self.active_ship.size // 2
+                else:
+                    row -= self.active_ship.size // 2
+
+                if 0 <= row < Config.GRID_SIZE and 0 <= col < Config.GRID_SIZE:
+                    self.active_ship.image.topleft = (
+                        Config.BOARD_OFFSET_X + col * Config.CELL_SIZE,
+                        Config.BOARD_OFFSET_Y + row * Config.CELL_SIZE
+                    )
+
+                    if self.try_place_on_grid(self.active_ship):
+                        self.placed_ships.append(self.active_ship)
+                        self.update_active_and_preview()
+                        if not self.active_ship and not self.preview_ship:
+                            state.game_state = "playing"
+                            state.player_ships = state.count_ships(state.player_board)
+                    else:
+                        self.snap_back()
                 else:
                     self.snap_back()
 
@@ -122,21 +135,24 @@ class PlacingLogic:
         if self.placed_ships:
             last_ship = self.placed_ships.pop()
 
-            # ✅ Clear last ship's cells from the board
             for (row, col) in last_ship.coords:
                 self.state.player_board[row][col] = Cell.EMPTY
 
-            # If there is an active ship, push it back to queue
             if self.active_ship:
                 self.ship_queue.insert(0, self.active_ship)
 
-            # Set last ship as the new active ship
             self.active_ship = last_ship
             self.active_ship.image.topleft = self.main_area_position()
 
-            # Update preview
             if self.ship_queue:
                 self.preview_ship = self.ship_queue[0]
                 self.preview_ship.image.topleft = self.preview_area_position()
             else:
                 self.preview_ship = None
+
+    def reset(self):
+        self.active_ship = None
+        self.preview_ship = None
+        self.ship_queue = []
+        self.placed_ships = []
+        self.setup_ships()
