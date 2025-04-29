@@ -9,7 +9,7 @@ class PlayingRender:
 def draw(self, screen, state):
     draw_top_bar(screen, state)
     font = pygame.font.SysFont(None, 30)
-    score_text = font.render(f"Score: {self.logic.state.score}", True, (255, 255, 255))
+    score_text = font.render(f"Score: {state.score} | Hits: {state.hits} | Misses: {state.misses}", True, (255, 255, 255))
     screen.blit(score_text, (10, 10))
 
     if state.player_ships == 0:

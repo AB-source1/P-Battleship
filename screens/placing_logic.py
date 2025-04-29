@@ -65,26 +65,30 @@ class PlacingLogic:
                     for i in range(size):
                         self.state.player_board[row][col + i] = Cell.SHIP
                         coords.append((row, col + i))
+                self.state.player_ships -= 1
+                if  self.state.player_ships == 0:
+                     self.state.game_state = "playing"
+                     print("All ships placed — transitioning to PLAYING state.")
         else:
-            if row < 0 or row + size > Config.GRID_SIZE or col < 0 or col >= Config.GRID_SIZE:
-                fits = False
-            else:
-                for i in range(size):
+                if row < 0 or row + size > Config.GRID_SIZE or col < 0 or col >= Config.GRID_SIZE:
+                 fits = False
+                else:
+                   for i in range(size):
                     if self.state.player_board[row + i][col] != Cell.EMPTY:
                         fits = False
                         break
-                if fits:
+                   if fits:
                     for i in range(size):
                         self.state.player_board[row + i][col] = Cell.SHIP
                         coords.append((row + i, col))
 
-        if fits:
-            ship.place(coords)
-            return True
-        return False
+                   if fits:
+                    ship.place(coords)
+                   return True
+                   return False
 
     def snap_back(self):
-        if self.active_ship:
+      if self.active_ship:
             self.active_ship.image.topleft = self.main_area_position()
 
     def handle_event(self, event: pygame.event.Event, state):
