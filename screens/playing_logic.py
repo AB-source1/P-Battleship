@@ -17,14 +17,20 @@ class PlayingLogic:
 
             if row is not None and col is not None and state.player_attacks[row][col] == Cell.EMPTY:
                 if state.computer_board[row][col] == Cell.SHIP:
-                    state.player_attacks[row][col] = Cell.HIT
-                    state.computer_board[row][col] = Cell.HIT
-                    state.computer_ships -= 1
+                     state.player_attacks[row][col] = Cell.HIT
+                     self.state.score += 10
+                     self.state.hits += 1
+
+                     state.computer_board[row][col] = Cell.HIT
+                     state.computer_ships -= 1
                 else:
                     state.player_attacks[row][col] = Cell.MISS
-
-                state.ai_turn_pending = True
-                state.ai_turn_start_time = pygame.time.get_ticks()
+                    self.state.score -= 2
+                    self.state.misses += 1
+            else:
+             state.player_attacks[row][col] = Cell.MISS
+             state.ai_turn_pending = True
+             state.ai_turn_start_time = pygame.time.get_ticks()
 
     def handle_ai_turn(self, current_time):
         if self.state.ai_turn_pending and current_time - self.state.ai_turn_start_time >= 1000:
