@@ -29,6 +29,10 @@ class Config:
 
     USE_SMART_SHIP_GENERATOR = False
 
+    #difficulty settings
+    DIFFICULTIES = ['Easy', 'Medium', 'Hard']
+    DEFAULT_DIFFICULTY = 'Easy'
+
     @staticmethod
     def generate_ships_for_grid():
         """Dynamically generate ship sizes based on grid size."""
