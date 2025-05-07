@@ -5,10 +5,12 @@ from core.config import Config
 class GameState:
     def __init__(self, reset_callback):
         self.reset_callback = reset_callback
+        self.difficulty = Config.DEFAULT_DIFFICULTY
         self.reset_all()
         self.show_restart_modal = False 
         self.show_quit_modal = False
         self.audio_enabled = True
+       
 
     def reset(self):
         self.player_board = create_board()
@@ -38,7 +40,6 @@ class GameState:
         self.show_quit_modal = False
         self.running = True
         self.reset_callback()
-        self.difficulty = Config.DEFAULT_DIFFICULTY
         self.ai_targets = []        # stack/queue of candidate cells to try next
         self.last_player_hit = None # last position where AI scored a hit
         self.reset_callback()

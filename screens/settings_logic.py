@@ -40,3 +40,10 @@ class SettingsLogic:
     def toggle_custom_input(self):
         self.show_custom_input = not self.show_custom_input
         self.grid_size_input = ""
+    
+    def apply_difficulty(self, level):
+        """Set AI difficulty and restart placement."""
+        self.state.difficulty = level
+        # clear any existing AI memory
+        
+        self.state.reset_all()

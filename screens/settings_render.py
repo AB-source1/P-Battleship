@@ -30,6 +30,18 @@ class SettingsRender:
                         Config.GREEN if Config.USE_SMART_SHIP_GENERATOR else Config.GRAY,
                         Config.DARK_GREEN if Config.USE_SMART_SHIP_GENERATOR else Config.DARK_GRAY,
                         self.toggle_smart_ship_generator)
+            
+            draw_text_center(screen, "AI Difficulty", Config.WIDTH // 2, 380, 28)
+            for i, level in enumerate(Config.DIFFICULTIES):
+                x = Config.WIDTH // 2 - 150 + i * 150
+                is_selected = (state.difficulty == level)
+                draw_button(
+                    screen, level,
+                    x, 420, 140, 40,
+                    Config.GREEN if is_selected else Config.GRAY,
+                    Config.DARK_GREEN if is_selected else Config.DARK_GRAY,
+                    lambda lvl=level: self.logic.apply_difficulty(lvl)
+                )
 
         else:
             draw_text_center(screen, "Enter size (5-20):", Config.WIDTH // 2, 280, 24)
