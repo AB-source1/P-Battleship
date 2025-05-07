@@ -12,85 +12,82 @@ from screens.menu_logic import MenuLogic
 from screens.menu_render import MenuRender
 from helpers.draw_helpers import draw_modal
 
+# — Initialize Pygame and window —
 pygame.init()
-
-# Setup
 screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT))
 pygame.display.set_caption("P-Battleship")
+
+# — Background image fill —
 background = pygame.image.load("resources/images/image.jpeg")
 background = pygame.transform.smoothscale(background, (Config.WIDTH, Config.HEIGHT))
 
+# — Compute layout & ship sizes based on default grid —
 Config.update_layout()
 
-# Temporary function that will be updated later
+# — Temporary stub for GameState reset callback —
 def dummy_restart_game():
     pass
 
-# Create state first with dummy restart
+# — Create shared game state (will call dummy for now) —
 state = GameState(dummy_restart_game)
 
-# Initialize all screens
-placing_logic = PlacingLogic(screen, state)
-placing_render = PlacingRender(placing_logic)
+# — Instantiate all logic & renderers, passing in the shared state —
+placing_logic   = PlacingLogic(screen, state)
+placing_render  = PlacingRender(placing_logic)
 
-playing_logic = PlayingLogic(screen, state)
-playing_render = PlayingRender(playing_logic)
+playing_logic   = PlayingLogic(screen, state)
+playing_render  = PlayingRender(playing_logic)
 
-settings_logic = SettingsLogic(screen, state)
+settings_logic  = SettingsLogic(screen, state)
 settings_render = SettingsRender(settings_logic)
 
-menu_logic = MenuLogic(screen, state)
-menu_render = MenuRender(menu_logic)
+menu_logic      = MenuLogic(screen, state)
+menu_render     = MenuRender(menu_logic)
 
-# Now fix real restart function
+# — Now wire up the real restart: reset both ship placement AND AI logic —
 def restart_game():
-    placing_logic.reset()
+    placing_logic.reset()    # clear & re-place ships
+    playing_logic.reset()    # clear any in-flight hunt/destroy AI state
 
-state.reset_callback = restart_game  # Update GameState to use correct restart
+state.reset_callback = restart_game
 
 # ──────────────────────────────────────────────────────────────────────────
 # Main Loop
 while state.running:
+    # Draw background
     screen.blit(background, (0, 0))
     current_time = pygame.time.get_ticks()
 
+    # Event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             state.show_quit_modal = True
 
+        # Pause all input when a modal is up
         if state.show_restart_modal or state.show_quit_modal:
-            continue  # Pause input while modal open
+            continue
 
-        # Handle events by active logic
-        if state.game_state == "menu":
-            menu_logic.handle_event(event, state)
-        elif state.game_state == "settings":
-            settings_logic.handle_event(event)
-        elif state.game_state == "placing":
-            placing_logic.handle_event(event, state)
-        elif state.game_state == "playing":
-            playing_logic.handle_event(event, state)
+        # Delegate to the active screen
+        if   state.game_state == "menu":     menu_logic.handle_event(event, state)
+        elif state.game_state == "settings": settings_logic.handle_event(event)
+        elif state.game_state == "placing":  placing_logic.handle_event(event, state)
+        elif state.game_state == "playing":  playing_logic.handle_event(event, state)
 
-    # AI turn logic
+    # AI turn (only in “playing”)
     if state.game_state == "playing":
         playing_logic.handle_ai_turn(current_time)
 
-    # Draw correct screen
-    if state.game_state == "menu":
-        menu_render.draw(screen, state)
-    elif state.game_state == "settings":
-        settings_render.draw(screen, state)
-    elif state.game_state == "placing":
-        placing_render.draw(screen, state)
-    elif state.game_state == "playing":
-        playing_render.draw(screen, state)
+    # Draw the current screen
+    if   state.game_state == "menu":     menu_render.draw(screen, state)
+    elif state.game_state == "settings": settings_render.draw(screen, state)
+    elif state.game_state == "placing":  placing_render.draw(screen, state)
+    elif state.game_state == "playing":  playing_render.draw(screen, state)
 
-    # Modal dialogs
+    # Restart confirmation modal
     if state.show_restart_modal:
         def confirm_restart():
             state.show_restart_modal = False
             state.reset_all()
-
         def cancel_restart():
             state.show_restart_modal = False
 
@@ -100,12 +97,12 @@ while state.running:
                    on_yes=confirm_restart,
                    on_no=cancel_restart)
 
+    # Quit confirmation modal
     elif state.show_quit_modal:
         def confirm_quit():
             state.show_quit_modal = False
             pygame.quit()
             sys.exit()
-
         def cancel_quit():
             state.show_quit_modal = False
 
