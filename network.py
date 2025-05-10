@@ -22,27 +22,34 @@ class Network:
             self.sock.bind((host_ip, port))
             self.sock.listen(1)
             self.conn = None
-            # ➤ Accept in background so UI doesn’t block
+            # Accept in background so UI doesn’t block
             threading.Thread(target=self._accept_client, daemon=True).start()
         else:
             self.sock.connect((host_ip, port))
             self.conn = self.sock
+            # Start listener immediately
             threading.Thread(target=self._listen, daemon=True).start()
 
     def _accept_client(self):
-        """Blocking accept; once done, start listening."""
+        """Blocking accept; once done, start listening thread."""
         conn, _ = self.sock.accept()
         self.conn = conn
-        # now we can start receiving messages
         threading.Thread(target=self._listen, daemon=True).start()
 
     def _listen(self):
-        """Read newline-delimited JSON messages into self.queue."""
+        """Read newline-delimited JSON messages into self.queue without crashing."""
         buffer = b""
         while True:
-            data = self.conn.recv(4096)
-            if not data:
+            try:
+                data = self.conn.recv(4096)
+            except (ConnectionResetError, OSError):
+                # Peer disconnected or socket closed
                 break
+
+            if not data:
+                # Clean shutdown
+                break
+
             buffer += data
             while b"\n" in buffer:
                 line, buffer = buffer.split(b"\n", 1)
@@ -55,7 +62,11 @@ class Network:
     def send(self, msg: dict):
         """Send a JSON-serializable dict, newline-terminated."""
         data = json.dumps(msg).encode() + b"\n"
-        self.conn.sendall(data)
+        try:
+            self.conn.sendall(data)
+        except (BrokenPipeError, OSError):
+            # Connection gone
+            pass
 
     def recv(self) -> dict | None:
         """Non-blocking receive: next msg or None."""
