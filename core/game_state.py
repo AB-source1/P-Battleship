@@ -29,6 +29,9 @@ class GameState:
         # Main loop flag
         self.running = True
 
+        self.network = None       # will hold our Network instance
+        self.is_host = False      # True if this client is the host
+
     def reset(self):
         """(Re)create both boards and the player's attack grid."""
         self.player_board   = create_board()
