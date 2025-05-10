@@ -140,9 +140,13 @@ class PlayingLogic:
                 self.state.player_attacks[r][c] = Cell.HIT if hit else Cell.MISS
                 if hit:
                     self.state.player_hits += 1
-                self.awaiting_result = False
-                del self.state.pending_shot
-            return
+
+                    # ─── NEW ─── Decrement the opponent’s ship count & check victory
+                    self.state.computer_ships -= 1
+                    if self.state.computer_ships == 0:
+                        self.state.winner     = "Player"
+                        self.state.game_state = "stats"
+                return
 
         # 2️⃣ Receive opponent’s shot
         msg = net.recv()
