@@ -44,9 +44,17 @@ class StatsRender:
         start_y  = 200
         line_h   = 40
 
-        # Column headers
-        draw_text_center(screen, "Player", left_x,  start_y, 36)
-        draw_text_center(screen, "Computer", right_x, start_y, 36)
+        
+        # Column headers: choose “You” vs “Opponent” in multiplayer
+        if state.network:
+            left_label  = "You"
+            right_label = "Opponent"
+        else:
+            left_label  = "Player"
+            right_label = "Computer"
+
+        draw_text_center(screen, left_label,  left_x,  start_y, 36)
+        draw_text_center(screen, right_label, right_x, start_y, 36)
 
         # Draw each row
         for i, key in enumerate(p_stats.keys()):
