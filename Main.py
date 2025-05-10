@@ -63,6 +63,11 @@ def restart_game():
     lobby_logic.ip_input    = ""
     lobby_logic.host_ip_str = ""
 
+    state.local_ready      = False
+    state.remote_ready     = False
+    state.waiting_for_sync = False
+    state.opponent_left    = False
+
 prev_scene = state.game_state
 clock = pygame.time.Clock()
 
@@ -76,6 +81,8 @@ while state.running:
             playing_logic.handle_network_turn(now)
         else:
             playing_logic.handle_ai_turn(now)
+    if state.game_state == "placing" and state.network:
+        placing_logic.update(state)
 
     # 2) Event handling
     for event in pygame.event.get():
