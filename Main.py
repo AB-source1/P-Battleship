@@ -2,23 +2,23 @@
 
 import pygame
 import sys
-from core.config            import Config
-from core.game_state        import GameState
-from screens.menu_logic     import MenuLogic
-from screens.menu_render    import MenuRender
-from screens.settings_logic import SettingsLogic
+from core.config             import Config
+from core.game_state         import GameState
+from screens.menu_logic      import MenuLogic
+from screens.menu_render     import MenuRender
+from screens.settings_logic  import SettingsLogic
 from screens.settings_render import SettingsRender
-from screens.lobby_logic    import LobbyLogic
-from screens.lobby_render   import LobbyRender
-from screens.placing_logic  import PlacingLogic
-from screens.placing_render import PlacingRender
-from screens.playing_logic  import PlayingLogic
-from screens.playing_render import PlayingRender
-from screens.stats_logic    import StatsLogic
-from screens.stats_render   import StatsRender
-from helpers.draw_helpers   import draw_modal
+from screens.lobby_logic     import LobbyLogic
+from screens.lobby_render    import LobbyRender
+from screens.placing_logic   import PlacingLogic
+from screens.placing_render  import PlacingRender
+from screens.playing_logic   import PlayingLogic
+from screens.playing_render  import PlayingRender
+from screens.stats_logic     import StatsLogic
+from screens.stats_render    import StatsRender
+from helpers.draw_helpers    import draw_modal
 
-# ─── Pygame Initialization ───────────────────────────────────────────────────
+# ─── Pygame Init ─────────────────────────────────────────────────────────────
 pygame.init()
 screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT))
 pygame.display.set_caption("P-Battleship")
@@ -26,12 +26,13 @@ background = pygame.image.load("resources/images/image.jpeg")
 background = pygame.transform.smoothscale(background, (Config.WIDTH, Config.HEIGHT))
 Config.update_layout()
 
-# ─── GameState & Reset Wiring ────────────────────────────────────────────────
+# ─── GameState & Screen Setup ────────────────────────────────────────────────
 state = GameState(lambda: None)
-placing_logic  = PlacingLogic(screen, state)
-placing_render = PlacingRender(placing_logic)
+
+placing_logic   = PlacingLogic(screen, state)
+placing_render  = PlacingRender(placing_logic)
 state.reset_callback = placing_logic.reset
-# Now state.reset_all() will call placing_logic.reset() for ship placement
+# calling state.reset_all() will now invoke placing_logic.reset()
 
 menu_logic      = MenuLogic(screen, state)
 menu_render     = MenuRender(menu_logic)
@@ -48,48 +49,54 @@ playing_render  = PlayingRender(playing_logic)
 stats_logic     = StatsLogic(screen, state)
 stats_render    = StatsRender(stats_logic)
 
+# ─── Restart Helper ─────────────────────────────────────────────────────────
 def restart_game():
     """
-    Reset boards, stats, AI/multiplayer state, and clear networking/lobby UI.
+    1) Reset all boards, stats, UI flags, and re-place ships.
+    2) Reset AI and network turn state.
+    3) Clear out networking so you can host/join again.
+    4) Reset lobby UI fields.
     """
     state.reset_all()
+    placing_logic.reset()
     playing_logic.reset()
-    # clear networking so we can host/join again
-    state.network   = None
-    state.is_host   = False
-    # reset lobby UI fields
+
+    state.network        = None
+    state.is_host        = False
+    state.local_ready    = False
+    state.remote_ready   = False
+    state.waiting_for_sync = False
+    state.opponent_left  = False
+
     lobby_logic.mode        = None
     lobby_logic.waiting     = False
     lobby_logic.ip_input    = ""
     lobby_logic.host_ip_str = ""
 
-    state.local_ready      = False
-    state.remote_ready     = False
-    state.waiting_for_sync = False
-    state.opponent_left    = False
-
 prev_scene = state.game_state
-clock = pygame.time.Clock()
+clock      = pygame.time.Clock()
 
-# ─── Main Loop ────────────────────────────────────────────────────────────────
+# ─── Main Loop ───────────────────────────────────────────────────────────────
 while state.running:
     now = pygame.time.get_ticks()
 
-    # 1) Turn logic first so `my_turn` is updated before click handling
+    # 1) During playing: run turn logic first so my_turn is fresh
     if state.game_state == "playing":
         if state.network:
             playing_logic.handle_network_turn(now)
         else:
             playing_logic.handle_ai_turn(now)
+
+    # 2) During placing in multiplayer: poll for peer-ready/disconnect
     if state.game_state == "placing" and state.network:
         placing_logic.update(state)
 
-    # 2) Event handling
+    # 3) Event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             state.show_quit_modal = True
 
-        # block input when any modal is visible
+        # block inputs when a modal is up
         if state.show_restart_modal or state.show_quit_modal:
             continue
 
@@ -106,12 +113,12 @@ while state.running:
         elif state.game_state == "stats":
             stats_logic.handle_event(event)
 
-    # 3) Detect entering "playing" to reinitialize turn flags
+    # 4) On entering “playing”, reset turn flags
     if prev_scene != state.game_state and state.game_state == "playing":
         playing_logic.reset()
     prev_scene = state.game_state
 
-    # 4) Draw background and active scene
+    # 5) Draw background and current scene
     screen.blit(background, (0, 0))
     if   state.game_state == "menu":
         menu_render.draw(screen, state)
@@ -126,7 +133,7 @@ while state.running:
     elif state.game_state == "stats":
         stats_render.draw(screen, state)
 
-    # 5) Restart confirmation modal
+    # 6) Restart confirmation
     if state.show_restart_modal:
         def _confirm_restart():
             state.show_restart_modal = False
@@ -142,7 +149,7 @@ while state.running:
             on_no=_cancel_restart
         )
 
-    # 6) Quit confirmation modal
+    # 7) Quit confirmation
     elif state.show_quit_modal:
         def _confirm_quit():
             pygame.quit()
@@ -158,20 +165,20 @@ while state.running:
             on_no=_cancel_quit
         )
 
-    # 7) Opponent-left modal
+    # 8) Opponent-left modal
     if state.opponent_left:
-        def _back_to_menu():
+        def _to_menu():
             state.opponent_left = False
             state.game_state    = "menu"
-        def _close_modal():
+        def _close():
             state.opponent_left = False
 
         draw_modal(
             screen,
             title="Opponent Disconnected",
             subtitle="The other player has left the game.",
-            on_yes=_back_to_menu,
-            on_no=_close_modal,
+            on_yes=_to_menu,
+            on_no=_close,
             yes_text="Main Menu",
             no_text="Close"
         )
