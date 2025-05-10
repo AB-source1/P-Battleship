@@ -60,14 +60,18 @@ stats_render    = StatsRender(stats_logic)
 
 # ─── Restart Helper ──────────────────────────────────────────────────────────
 def restart_game():
-    """
-    Called by the Restart modal:
-    1) state.reset_all() clears boards, stats, UI flags, and invokes PlacingLogic.reset().
-    2) playing_logic.reset() clears AI hunt/destroy state and reinitializes multiplayer turn flags.
-    """
-    state.reset_all()
-    playing_logic.reset()
+    state.reset_all()        # clears boards, stats, UI, and re-places ships
+    playing_logic.reset()    # clears AI/multiplayer turn flags
 
+    # ─── NEW ─── Clear out the old network so we can host/join again
+    state.network   = None
+    state.is_host   = False
+
+    # Also reset the Lobby UI (so mode/waiting/IP are blank)
+    lobby_logic.mode        = None
+    lobby_logic.waiting     = False
+    lobby_logic.ip_input    = ""
+    lobby_logic.host_ip_str = ""
 # ─── Main Loop ───────────────────────────────────────────────────────────────
 prev_scene = state.game_state
 while state.running:
