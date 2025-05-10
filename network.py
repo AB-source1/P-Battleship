@@ -37,17 +37,19 @@ class Network:
         threading.Thread(target=self._listen, daemon=True).start()
 
     def _listen(self):
-        """Read newline-delimited JSON messages into self.queue without crashing."""
+        """Read messages; on socket error or clean close, signal a disconnect."""
         buffer = b""
         while True:
             try:
                 data = self.conn.recv(4096)
             except (ConnectionResetError, OSError):
-                # Peer disconnected or socket closed
+                # Peer disconnected abruptly
+                self.queue.put({"type":"disconnect"})
                 break
 
             if not data:
-                # Clean shutdown
+                # Peer closed cleanly
+                self.queue.put({"type":"disconnect"})
                 break
 
             buffer += data

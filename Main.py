@@ -31,7 +31,7 @@ state = GameState(lambda: None)
 placing_logic  = PlacingLogic(screen, state)
 placing_render = PlacingRender(placing_logic)
 state.reset_callback = placing_logic.reset
-# Now state.reset_all() will call placing_logic.reset()
+# Now state.reset_all() will call placing_logic.reset() for ship placement
 
 menu_logic      = MenuLogic(screen, state)
 menu_render     = MenuRender(menu_logic)
@@ -50,18 +50,14 @@ stats_render    = StatsRender(stats_logic)
 
 def restart_game():
     """
-    Called by the Restart modal:
-    1) state.reset_all() clears boards, stats, UI, and invokes placing_logic.reset()
-    2) playing_logic.reset() clears AI & multiplayer turn state
-    3) Clear out old network so you can host/join again
-    4) Reset the Lobby UI
+    Reset boards, stats, AI/multiplayer state, and clear networking/lobby UI.
     """
     state.reset_all()
     playing_logic.reset()
-
+    # clear networking so we can host/join again
     state.network   = None
     state.is_host   = False
-
+    # reset lobby UI fields
     lobby_logic.mode        = None
     lobby_logic.waiting     = False
     lobby_logic.ip_input    = ""
@@ -74,7 +70,7 @@ clock = pygame.time.Clock()
 while state.running:
     now = pygame.time.get_ticks()
 
-    # 1) Turn logic first, so my_turn is updated before handling clicks
+    # 1) Turn logic first so `my_turn` is updated before click handling
     if state.game_state == "playing":
         if state.network:
             playing_logic.handle_network_turn(now)
@@ -86,7 +82,7 @@ while state.running:
         if event.type == pygame.QUIT:
             state.show_quit_modal = True
 
-        # Block all input while a modal is visible
+        # block input when any modal is visible
         if state.show_restart_modal or state.show_quit_modal:
             continue
 
@@ -103,12 +99,12 @@ while state.running:
         elif state.game_state == "stats":
             stats_logic.handle_event(event)
 
-    # 3) Detect entering the playing scene to reset turn flags
+    # 3) Detect entering "playing" to reinitialize turn flags
     if prev_scene != state.game_state and state.game_state == "playing":
         playing_logic.reset()
     prev_scene = state.game_state
 
-    # 4) Draw background and current scene
+    # 4) Draw background and active scene
     screen.blit(background, (0, 0))
     if   state.game_state == "menu":
         menu_render.draw(screen, state)
@@ -153,6 +149,24 @@ while state.running:
             subtitle="Are you sure you want to exit?",
             on_yes=_confirm_quit,
             on_no=_cancel_quit
+        )
+
+    # 7) Opponent-left modal
+    if state.opponent_left:
+        def _back_to_menu():
+            state.opponent_left = False
+            state.game_state    = "menu"
+        def _close_modal():
+            state.opponent_left = False
+
+        draw_modal(
+            screen,
+            title="Opponent Disconnected",
+            subtitle="The other player has left the game.",
+            on_yes=_back_to_menu,
+            on_no=_close_modal,
+            yes_text="Main Menu",
+            no_text="Close"
         )
 
     pygame.display.flip()
