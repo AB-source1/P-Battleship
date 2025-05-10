@@ -14,8 +14,7 @@ class PlayingLogic:
 
     def reset(self) -> None:
         """
-        Clear any in-flight hunt-and-destroy data and
-        initialize multiplayer turn state.
+        Clear AI hunt/destroy state and initialize multiplayer turn flags.
         """
         # ─ AI hunt-and-destroy state ────────────────────────────
         self.ai_mode            = 'search'
@@ -28,7 +27,7 @@ class PlayingLogic:
             # Host always fires first
             self.my_turn = bool(self.state.is_host)
         else:
-            # Single-player never starts with AI turn
+            # Single-player starts with player click
             self.my_turn = False
 
         self.awaiting_result = False
@@ -54,10 +53,8 @@ class PlayingLogic:
 
         # ───────────── Multiplayer click ───────────────────────
         if state.network:
-            # Only when it's our turn
             if not self.my_turn:
                 return
-            # Only empty cells
             if state.player_attacks[row][col] != Cell.EMPTY:
                 return
 
@@ -66,7 +63,7 @@ class PlayingLogic:
             state.player_shots += 1
             state.player_shot_times.append(now)
 
-            # Queue shot; actual send happens in handle_network_turn()
+            # Queue shot; actual send in handle_network_turn()
             state.pending_shot = (row, col)
             self.my_turn = False
             return
@@ -91,16 +88,16 @@ class PlayingLogic:
                 state.game_state = "stats"
                 return
 
-            # Schedule AI turn after 1s
+            # Schedule AI turn
             state.ai_turn_pending    = True
             state.ai_turn_start_time = now
 
     def handle_ai_turn(self, current_time: int) -> None:
         """
-        Single-player AI logic (Easy/Medium/Hard) after a delay.
+        Single-player AI logic (Easy/Medium/Hard) after 1s delay.
         """
-        if (not self.state.ai_turn_pending
-                or (current_time - self.state.ai_turn_start_time) < 1000):
+        if (not self.state.ai_turn_pending or
+            (current_time - self.state.ai_turn_start_time) < 1000):
             return
 
         diff = self.state.difficulty
@@ -118,15 +115,14 @@ class PlayingLogic:
 
     def handle_network_turn(self, current_time: int) -> None:
         """
-        Multiplayer turn handling:
-         - If we have a pending shot, send it and await the result.
-         - Otherwise poll for the opponent’s shot and reply.
+        Multiplayer: send your pending shot & await result,
+        or receive opponent's shot and reply.
         """
         net = self.state.network
         if not net:
             return
 
-        # 1️⃣ Send pending shot & await result
+        # 1) If we have a pending_shot, send it & await result
         if hasattr(self.state, 'pending_shot') and self.state.pending_shot:
             r, c = self.state.pending_shot
             if not self.awaiting_result:
@@ -140,15 +136,15 @@ class PlayingLogic:
                 self.state.player_attacks[r][c] = Cell.HIT if hit else Cell.MISS
                 if hit:
                     self.state.player_hits += 1
-
-                    # ─── NEW ─── Decrement the opponent’s ship count & check victory
                     self.state.computer_ships -= 1
                     if self.state.computer_ships == 0:
                         self.state.winner     = "Player"
                         self.state.game_state = "stats"
-                return
+                self.awaiting_result = False
+                del self.state.pending_shot
+            return
 
-        # 2️⃣ Receive opponent’s shot
+        # 2) Otherwise, receive opponent's shot
         msg = net.recv()
         if not msg or msg.get("type") != "shot":
             return
@@ -168,19 +164,19 @@ class PlayingLogic:
             self.state.game_state = "stats"
             return
 
-        # It's our turn now
+        # Now it's your turn
         self.my_turn = True
 
-    # ───── Easy & Medium Helpers ────────────────────────────
+    # ───── AI Helper Methods ───────────────────────────────────────────
 
-    def _ai_shot_random(self, seed_next: bool = False) -> None:
-        """Fire at a random untried cell, enqueue neighbors on hit if requested."""
+    def _ai_shot_random(self, seed_next: bool=False) -> None:
+        """Random shot; enqueue neighbors on hit if requested."""
         size = Config.GRID_SIZE
         while True:
             r, c = randint(0, size-1), randint(0, size-1)
             cell = self.state.player_board[r][c]
             if cell in (Cell.EMPTY, Cell.SHIP):
-                # Timestamp & count for stats
+                # Stats
                 now = pygame.time.get_ticks()
                 self.state.ai_shots += 1
                 self.state.ai_shot_times.append(now)
@@ -190,14 +186,13 @@ class PlayingLogic:
                     self.state.ai_hits += 1
                 self._apply_shot_result(r, c, hit, seed_next)
 
-                # Victory?
                 if hit and self.state.player_ships == 0:
                     self.state.winner     = "AI"
                     self.state.game_state = "stats"
                 break
 
     def _ai_shot_from_targets(self) -> None:
-        """Fire at the next queued neighbor (Medium/Hard)."""
+        """Shot at queued adjacent cells for Medium/Hard."""
         while self.state.ai_targets:
             r, c = self.state.ai_targets.pop(0)
             cell = self.state.player_board[r][c]
@@ -215,7 +210,6 @@ class PlayingLogic:
                     self.state.winner     = "AI"
                     self.state.game_state = "stats"
                 return
-        # Fallback to random
         self._ai_shot_random(seed_next=True)
 
     def _apply_shot_result(self, r: int, c: int, hit: bool, seed_next: bool) -> None:
@@ -242,15 +236,13 @@ class PlayingLogic:
                     and (nr, nc) not in self.state.ai_targets):
                 self.state.ai_targets.append((nr, nc))
 
-    # ───── Hard-Mode Hunt-and-Destroy ─────────────────────────
-
     def _ai_advanced_shot(self) -> None:
         """
-        Hard mode: random until a hit, then probe all directions,
-        lock orientation, and follow the ship (even reverse at end).
+        Hard mode: random until hit, then destroy by probing around
+        and following the ship until it sinks (reversing as needed).
         """
         if self.ai_mode == 'search':
-            # Initial random shot, enqueuing neighbors
+            # initial random shot with enqueue
             while True:
                 rr, cc = randint(0, Config.GRID_SIZE-1), randint(0, Config.GRID_SIZE-1)
                 cell = self.state.player_board[rr][cc]
@@ -265,7 +257,6 @@ class PlayingLogic:
                     self._apply_shot_result(rr, cc, hit, seed_next=True)
 
                     if hit:
-                        # Enter destroy mode
                         self.ai_mode            = 'destroy'
                         self.destroy_origin     = (rr, cc)
                         self.destroy_directions = [(-1,0),(1,0),(0,-1),(0,1)]
@@ -274,11 +265,10 @@ class PlayingLogic:
                         self.state.winner     = "AI"
                         self.state.game_state = "stats"
                     break
-
         else:
-            # Destroy mode
+            # destroy mode
             if self.current_direction is None:
-                # Probe each direction once
+                # probe each direction once
                 while self.destroy_directions:
                     dr, dc = self.destroy_directions.pop(0)
                     r0, c0 = self.destroy_origin
@@ -299,12 +289,12 @@ class PlayingLogic:
                             self.state.winner     = "AI"
                             self.state.game_state = "stats"
                         return
-                # No valid probes → abort destroy
+                # no valid probes → back to search
                 self._reset_destroy_mode()
                 self._ai_shot_random(seed_next=True)
                 return
 
-            # Follow locked direction along the ship
+            # follow locked direction
             dr, dc = self.current_direction
             lr, lc = self.state.last_player_hit
             nr, nc = lr + dr, lc + dc
@@ -324,7 +314,7 @@ class PlayingLogic:
                         self.state.game_state = "stats"
                     return
 
-                # Reverse direction once at the end
+                # reverse direction
                 odr, odc = -dr, -dc
                 self.current_direction     = (odr, odc)
                 self.state.last_player_hit = self.destroy_origin
@@ -342,18 +332,18 @@ class PlayingLogic:
                         self.state.winner     = "AI"
                         self.state.game_state = "stats"
 
-            # Finished destroying this ship
+            # finished destroying
             self._reset_destroy_mode()
             self._ai_shot_random(seed_next=True)
 
     def _valid_target(self, r: int, c: int) -> bool:
-        """Return True if (r,c) is within bounds and not yet fired upon."""
+        """True if (r,c) is within bounds and untried."""
         size = Config.GRID_SIZE
         return (0 <= r < size and 0 <= c < size
                 and self.state.player_board[r][c] in (Cell.EMPTY, Cell.SHIP))
 
     def _reset_destroy_mode(self) -> None:
-        """Exit destroy mode and return to pure search."""
+        """Exit destroy mode and return to search."""
         self.ai_mode            = 'search'
         self.destroy_origin     = None
         self.destroy_directions = []

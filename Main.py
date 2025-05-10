@@ -18,31 +18,21 @@ from screens.stats_logic    import StatsLogic
 from screens.stats_render   import StatsRender
 from helpers.draw_helpers   import draw_modal
 
-# ─── Initialization ───────────────────────────────────────────────────────────
+# ─── Pygame Initialization ───────────────────────────────────────────────────
 pygame.init()
-# Create the window at the configured size
 screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT))
 pygame.display.set_caption("P-Battleship")
-
-# Load and scale the background image once
 background = pygame.image.load("resources/images/image.jpeg")
 background = pygame.transform.smoothscale(background, (Config.WIDTH, Config.HEIGHT))
-
-# Compute positions & sizes based on the current grid size
 Config.update_layout()
 
 # ─── GameState & Reset Wiring ────────────────────────────────────────────────
-# We start with a dummy reset_callback; we'll override it after creating PlacingLogic
 state = GameState(lambda: None)
-
-# Instantiate PlacingLogic first, then wire GameState.reset_callback to it.
 placing_logic  = PlacingLogic(screen, state)
 placing_render = PlacingRender(placing_logic)
 state.reset_callback = placing_logic.reset
-# Why? This ensures that every time state.reset_all() is called,
-# PlacingLogic.reset() runs to re-place ships on a fresh board.
+# Now state.reset_all() will call placing_logic.reset()
 
-# ─── Instantiate All Screens ─────────────────────────────────────────────────
 menu_logic      = MenuLogic(screen, state)
 menu_render     = MenuRender(menu_logic)
 
@@ -58,37 +48,48 @@ playing_render  = PlayingRender(playing_logic)
 stats_logic     = StatsLogic(screen, state)
 stats_render    = StatsRender(stats_logic)
 
-# ─── Restart Helper ──────────────────────────────────────────────────────────
 def restart_game():
-    state.reset_all()        # clears boards, stats, UI, and re-places ships
-    playing_logic.reset()    # clears AI/multiplayer turn flags
+    """
+    Called by the Restart modal:
+    1) state.reset_all() clears boards, stats, UI, and invokes placing_logic.reset()
+    2) playing_logic.reset() clears AI & multiplayer turn state
+    3) Clear out old network so you can host/join again
+    4) Reset the Lobby UI
+    """
+    state.reset_all()
+    playing_logic.reset()
 
-    # ─── NEW ─── Clear out the old network so we can host/join again
     state.network   = None
     state.is_host   = False
 
-    # Also reset the Lobby UI (so mode/waiting/IP are blank)
     lobby_logic.mode        = None
     lobby_logic.waiting     = False
     lobby_logic.ip_input    = ""
     lobby_logic.host_ip_str = ""
-# ─── Main Loop ───────────────────────────────────────────────────────────────
+
 prev_scene = state.game_state
+clock = pygame.time.Clock()
+
+# ─── Main Loop ────────────────────────────────────────────────────────────────
 while state.running:
-    # Draw the static background
-    screen.blit(background, (0, 0))
     now = pygame.time.get_ticks()
 
-    # ─── Event Handling ───────────────────────────────────────────────────────
+    # 1) Turn logic first, so my_turn is updated before handling clicks
+    if state.game_state == "playing":
+        if state.network:
+            playing_logic.handle_network_turn(now)
+        else:
+            playing_logic.handle_ai_turn(now)
+
+    # 2) Event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             state.show_quit_modal = True
 
-        # When a modal is up, block other input
+        # Block all input while a modal is visible
         if state.show_restart_modal or state.show_quit_modal:
             continue
 
-        # Delegate events based on current scene
         if   state.game_state == "menu":
             menu_logic.handle_event(event, state)
         elif state.game_state == "lobby":
@@ -102,22 +103,13 @@ while state.running:
         elif state.game_state == "stats":
             stats_logic.handle_event(event)
 
-    # ─── Scene Transitions ────────────────────────────────────────────────────
-    # If we just switched into "playing", reinitialize the playing_logic
+    # 3) Detect entering the playing scene to reset turn flags
     if prev_scene != state.game_state and state.game_state == "playing":
         playing_logic.reset()
     prev_scene = state.game_state
 
-    # ─── Turn Logic ───────────────────────────────────────────────────────────
-    if state.game_state == "playing":
-        if state.network:
-            # Multiplayer mode: exchange shots/results
-            playing_logic.handle_network_turn(now)
-        else:
-            # Single-player mode: AI takes its turn after a delay
-            playing_logic.handle_ai_turn(now)
-
-    # ─── Drawing ──────────────────────────────────────────────────────────────
+    # 4) Draw background and current scene
+    screen.blit(background, (0, 0))
     if   state.game_state == "menu":
         menu_render.draw(screen, state)
     elif state.game_state == "lobby":
@@ -131,7 +123,7 @@ while state.running:
     elif state.game_state == "stats":
         stats_render.draw(screen, state)
 
-    # ─── Restart Confirmation Modal ────────────────────────────────────────────
+    # 5) Restart confirmation modal
     if state.show_restart_modal:
         def _confirm_restart():
             state.show_restart_modal = False
@@ -147,7 +139,7 @@ while state.running:
             on_no=_cancel_restart
         )
 
-    # ─── Quit Confirmation Modal ───────────────────────────────────────────────
+    # 6) Quit confirmation modal
     elif state.show_quit_modal:
         def _confirm_quit():
             pygame.quit()
@@ -163,9 +155,8 @@ while state.running:
             on_no=_cancel_quit
         )
 
-    # Flip the display buffers
     pygame.display.flip()
+    clock.tick(60)
 
-# Clean up on exit
 pygame.quit()
 sys.exit()
