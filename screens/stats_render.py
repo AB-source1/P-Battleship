@@ -16,6 +16,16 @@ class StatsRender:
         else:
             msg = "You lost!"
         draw_text_center(screen, msg, Config.WIDTH // 2, 120, 48)
+        draw_text_center(screen, msg, Config.WIDTH // 2, 120, 48)
+
+        # ─── NEW: show the final score ─────────────────────────
+        draw_text_center(
+            screen,
+            f"Final Score: {state.score}",
+            Config.WIDTH // 2,
+            180,         # just below the win/lose banner
+            32           # a slightly smaller font than the title
+        )
 
         # Compute stats summary dictionaries
         def compute_stats(shots, hits, times):

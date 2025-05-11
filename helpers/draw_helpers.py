@@ -35,6 +35,7 @@ def draw_top_bar(screen, state):
         Config.RED, Config.DARK_GRAY,
         lambda: setattr(state, 'show_quit_modal', True)
     )
+    
 
 def toggle_audio(state):
     state.audio_enabled = not state.audio_enabled

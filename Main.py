@@ -20,10 +20,10 @@ from helpers.draw_helpers   import draw_modal
 
 # ─── Pygame Initialization ───────────────────────────────────────────────────
 pygame.init()
-screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT))
+screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT),pygame.RESIZABLE)
 pygame.display.set_caption("P-Battleship")
-background = pygame.image.load("resources/images/image.jpeg")
-background = pygame.transform.smoothscale(background, (Config.WIDTH, Config.HEIGHT))
+bg_image = pygame.image.load("resources/images/image.jpeg")
+background = pygame.transform.smoothscale(bg_image, (Config.WIDTH, Config.HEIGHT))
 Config.update_layout()
 
 # ─── GameState & Reset Wiring ────────────────────────────────────────────────
@@ -31,6 +31,7 @@ state = GameState(lambda: None)
 placing_logic  = PlacingLogic(screen, state)
 placing_render = PlacingRender(placing_logic)
 state.reset_callback = placing_logic.reset
+state.is_fullscreen = False
 # Now state.reset_all() will call placing_logic.reset() for ship placement
 
 menu_logic      = MenuLogic(screen, state)
@@ -89,8 +90,48 @@ while state.running:
         if event.type == pygame.QUIT:
             state.show_quit_modal = True
 
+         # ─── Handle OS‐resize (e.g. user clicks Maximize/Restore, drags border) ─────
+        if event.type == pygame.VIDEORESIZE:
+            # Update our game’s width/height
+            Config.WIDTH, Config.HEIGHT = event.w, event.h
+            # Recreate the screen surface in RESIZABLE mode
+            screen = pygame.display.set_mode(
+                (Config.WIDTH, Config.HEIGHT),
+                pygame.RESIZABLE
+            )
+            # Rescale the background to fill the new size
+            background = pygame.transform.smoothscale(
+                bg_image,
+                (Config.WIDTH, Config.HEIGHT)
+            )
+            # Recompute all your grid‐offsets, cell sizes, etc.
+            Config.update_layout()
+            continue    # skip any other handlers for this event
+
+        
+
+            # Recompute grid‐layout & offsets for new size
+            Config.update_layout()
+            # Rescale the background to fit exactly
+            background = pygame.transform.smoothscale(
+                bg_image,
+                (Config.WIDTH, Config.HEIGHT)
+            )
+            continue    # don’t let this keypress fall through to other handlers
+
         # block input when any modal is visible
         if state.show_restart_modal or state.show_quit_modal:
+            continue
+
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if state.history:
+                # pop last scene
+                prev = state.history.pop()
+                state.skip_push = True
+                state.game_state = prev
+            else:
+                # nothing to go back to ⇒ quit modal
+                state.show_quit_modal = True
             continue
 
         if   state.game_state == "menu":
@@ -107,8 +148,25 @@ while state.running:
             stats_logic.handle_event(event)
 
     # 3) Detect entering "playing" to reinitialize turn flags
-    if prev_scene != state.game_state and state.game_state == "playing":
-        playing_logic.reset()
+    if prev_scene != state.game_state:
+        if not state.skip_push:
+            state.history.append(prev_scene)
+        state.skip_push = False
+
+
+        
+        # ─── entering “playing” ⇒ reset AI & start timer
+        if state.game_state == "playing":
+            playing_logic.reset()
+            # record the moment play begins
+            state.timer_start = pygame.time.get_ticks()
+           
+            # ─── RESET SCORING ─────────────────────
+            now = pygame.time.get_ticks()
+            state.score          = 0
+            state.hit_count      = 0
+            state.last_shot_time = now
+
     prev_scene = state.game_state
 
     # 4) Draw background and active scene

@@ -24,6 +24,13 @@ class GameState:
         self.ai_shot_times     = []     # same for AI
         self.winner            = None   # "Player" or "AI"
 
+        self.timer_start = None    # will hold pygame.time.get_ticks() when play begins
+
+                # ─── SCORING STATE ───────────────────────────────────
+        self.score            = 0       # running total
+        self.last_shot_time   = None    # when the player last fired (ms)
+        self.hit_count        = 0       # total hits this round
+
         # Kick off first full reset
         self.reset_all()
         # Main loop flag
@@ -35,6 +42,9 @@ class GameState:
         self.remote_ready   = False   # peer has signaled ready
         self.waiting_for_sync = False # show waiting overlay
         self.opponent_left  = False   # peer disconnected
+
+        self.history = []       # stack of previous scenes
+        self.skip_push = False
 
     def reset(self):
         """(Re)create both boards and the player's attack grid."""

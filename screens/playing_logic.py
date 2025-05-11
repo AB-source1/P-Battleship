@@ -1,8 +1,10 @@
 import pygame
 from random import randint
+
 from core.config import Config
 from core.game_state import GameState
-from game.board_helpers import Cell, get_grid_pos
+from game.board_helpers import Cell, get_grid_pos, fire_at
+
 
 class PlayingLogic:
     def __init__(self, screen, state: GameState):
@@ -39,7 +41,7 @@ class PlayingLogic:
         """
         Handle player clicks:
         - In multiplayer, queue a pending shot when it's our turn.
-        - In single-player, resolve a shot against the AI.
+        - In single-player, resolve a shot against the AI and update score.
         """
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return
@@ -52,9 +54,8 @@ class PlayingLogic:
         if row is None or col is None:
             return
 
-        # Multiplayer click logic
+        # ─── Multiplayer click logic (unchanged) ───────────────────
         if state.network:
-            # Only allow when it's our turn and cell is empty
             if not self.my_turn or state.player_attacks[row][col] != Cell.EMPTY:
                 return
 
@@ -62,24 +63,18 @@ class PlayingLogic:
             state.player_shots += 1
             state.player_shot_times.append(now)
 
-            # Queue the shot for network sending
             state.pending_shot = (row, col)
             self.my_turn = False
             return
 
-        # Single-player click logic
+        # ─── Single-player click logic with scoring ────────────────
         if not state.ai_turn_pending and state.player_attacks[row][col] == Cell.EMPTY:
             now = pygame.time.get_ticks()
             state.player_shots += 1
             state.player_shot_times.append(now)
 
-            if state.computer_board[row][col] == Cell.SHIP:
-                state.player_hits += 1
-                state.player_attacks[row][col] = Cell.HIT
-                state.computer_board[row][col] = Cell.HIT
-                state.computer_ships -= 1
-            else:
-                state.player_attacks[row][col] = Cell.MISS
+            # ←─── Replace inline hit/miss with scoring helper ───────
+            self.handle_fire(row, col, state)
 
             # Check for player victory
             if state.computer_ships == 0:
@@ -360,3 +355,46 @@ class PlayingLogic:
         self.destroy_origin     = None
         self.destroy_directions = []
         self.current_direction  = None
+
+    def handle_fire(self, row: int, col: int, state: GameState) -> None:
+        """
+        Called when the player shoots at (row,col).
+        1) Use fire_at() to update the enemy board.
+        2) Mark the attack grid.
+        3) Apply scoring: base hit/miss, time bonus, ship‐sink bonuses.
+        """
+        # 1) Determine hit/miss on the computer board
+        hit, ship = fire_at(row, col, state.computer_board)
+
+        # 2) Mark where the player has shot
+        state.player_attacks[row][col] = Cell.HIT if hit else Cell.MISS
+
+        # 3) Update hit count & remaining ships
+        if hit:
+            state.player_hits += 1
+            state.computer_ships -= 1
+
+        # 4) Compute elapsed time for bonus/penalty
+        now = pygame.time.get_ticks()
+        last = getattr(state, 'last_shot_time', now)
+        elapsed = now - last
+        state.last_shot_time = now
+
+        # 5) Base points or miss penalty
+        points = Config.BASE_HIT_POINTS if hit else -Config.MISS_PENALTY
+
+        if hit:
+            # 6) Time-based bonus (capped)
+            bonus_ms   = max(0, Config.MAX_SHOT_TIME_MS - elapsed)
+            time_bonus = (bonus_ms // 1000) * Config.TIME_BONUS_FACTOR
+            points    += time_bonus
+
+            # 7) Ship-sunk bonus (flat + per-cell)
+            # Note: currently fire_at returns no ship object, so `ship` is None.
+            # If you track real Ship instances, this is where you'd check .is_sunk()
+            if ship and getattr(ship, 'is_sunk', lambda: False)():
+                points += Config.SHIP_SUNK_BONUS
+                points += getattr(ship, 'length', 0) * Config.SHIP_LENGTH_BONUS
+
+        # 8) Apply to state.score
+        state.score += points

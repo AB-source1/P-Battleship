@@ -19,6 +19,14 @@ class Config:
     BOARD_OFFSET_Y        = None
     TOP_BAR_HEIGHT        = 40
 
+    # ─── SCORING PARAMETERS ──────────────────────────────────────
+    BASE_HIT_POINTS      = 10    # Award for every successful hit
+    MISS_PENALTY         =  2    # Deduct for every miss
+    TIME_BONUS_FACTOR    =  5    # Multiplier for “quick‐hit” bonus
+    MAX_SHOT_TIME_MS     = 5000  # After this delay, no time bonus
+    SHIP_SUNK_BONUS      = 50    # Flat bonus for sinking any ship
+    SHIP_LENGTH_BONUS    = 10    # Additional per‐cell bonus (e.g. length×10)
+
     # ─── Colors ───
     WHITE       = (255, 255, 255)
     RED         = (255,   0,   0)
