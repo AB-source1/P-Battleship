@@ -20,10 +20,10 @@ from helpers.draw_helpers   import draw_modal
 
 # ─── Pygame Initialization ───────────────────────────────────────────────────
 pygame.init()
-screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT))
+screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT),pygame.RESIZABLE)
 pygame.display.set_caption("P-Battleship")
-background = pygame.image.load("resources/images/image.jpeg")
-background = pygame.transform.smoothscale(background, (Config.WIDTH, Config.HEIGHT))
+bg_image = pygame.image.load("resources/images/image.jpeg")
+background = pygame.transform.smoothscale(bg_image, (Config.WIDTH, Config.HEIGHT))
 Config.update_layout()
 
 # ─── GameState & Reset Wiring ────────────────────────────────────────────────
@@ -31,6 +31,7 @@ state = GameState(lambda: None)
 placing_logic  = PlacingLogic(screen, state)
 placing_render = PlacingRender(placing_logic)
 state.reset_callback = placing_logic.reset
+state.is_fullscreen = False
 # Now state.reset_all() will call placing_logic.reset() for ship placement
 
 menu_logic      = MenuLogic(screen, state)
@@ -88,6 +89,35 @@ while state.running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             state.show_quit_modal = True
+
+         # ─── Handle OS‐resize (e.g. user clicks Maximize/Restore, drags border) ─────
+        if event.type == pygame.VIDEORESIZE:
+            # Update our game’s width/height
+            Config.WIDTH, Config.HEIGHT = event.w, event.h
+            # Recreate the screen surface in RESIZABLE mode
+            screen = pygame.display.set_mode(
+                (Config.WIDTH, Config.HEIGHT),
+                pygame.RESIZABLE
+            )
+            # Rescale the background to fill the new size
+            background = pygame.transform.smoothscale(
+                bg_image,
+                (Config.WIDTH, Config.HEIGHT)
+            )
+            # Recompute all your grid‐offsets, cell sizes, etc.
+            Config.update_layout()
+            continue    # skip any other handlers for this event
+
+        
+
+            # Recompute grid‐layout & offsets for new size
+            Config.update_layout()
+            # Rescale the background to fit exactly
+            background = pygame.transform.smoothscale(
+                bg_image,
+                (Config.WIDTH, Config.HEIGHT)
+            )
+            continue    # don’t let this keypress fall through to other handlers
 
         # block input when any modal is visible
         if state.show_restart_modal or state.show_quit_modal:
