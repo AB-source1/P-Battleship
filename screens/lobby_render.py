@@ -11,6 +11,15 @@ class LobbyRender:
     def draw(self, screen, state):
         # Title
         draw_text_center(screen, "Multiplayer Lobby", Config.WIDTH//2, 80, 48)
+        
+        def back():
+            if state.history:
+                state.skip_push = True
+                state.game_state = state.history.pop()
+            else:
+                state.game_state = "menu (esc)"
+        draw_button(screen, "Back", 10, 10, 140, 30,
+                    Config.GRAY, Config.DARK_GRAY, back)
 
         # Host + Join buttons
         draw_button(screen, "Host Game",

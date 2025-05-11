@@ -93,6 +93,17 @@ while state.running:
         if state.show_restart_modal or state.show_quit_modal:
             continue
 
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if state.history:
+                # pop last scene
+                prev = state.history.pop()
+                state.skip_push = True
+                state.game_state = prev
+            else:
+                # nothing to go back to ⇒ quit modal
+                state.show_quit_modal = True
+            continue
+
         if   state.game_state == "menu":
             menu_logic.handle_event(event, state)
         elif state.game_state == "lobby":
@@ -107,8 +118,15 @@ while state.running:
             stats_logic.handle_event(event)
 
     # 3) Detect entering "playing" to reinitialize turn flags
-    if prev_scene != state.game_state and state.game_state == "playing":
-        playing_logic.reset()
+    if prev_scene != state.game_state:
+        if not state.skip_push:
+            state.history.append(prev_scene)
+        state.skip_push = False
+
+        # preserve your existing “entering playing ⇒ reset AI” hook
+        if state.game_state == "playing":
+            playing_logic.reset()
+
     prev_scene = state.game_state
 
     # 4) Draw background and active scene

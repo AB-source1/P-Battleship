@@ -9,6 +9,15 @@ class SettingsRender:
     def draw(self, screen, state):
         draw_top_bar(screen, state)
 
+        def back():
+            if state.history:
+                state.skip_push = True
+                state.game_state = state.history.pop()
+            else:
+                state.game_state = "menu"
+        draw_button(screen, "Back (esc)", 10, Config.TOP_BAR_HEIGHT + 5, 140, 30,
+                    Config.GRAY, Config.DARK_GRAY, back)
+
         draw_text_center(screen, "Select Grid Size", Config.WIDTH // 2, 80, 40)
 
         if not self.logic.show_custom_input:

@@ -36,6 +36,9 @@ class GameState:
         self.waiting_for_sync = False # show waiting overlay
         self.opponent_left  = False   # peer disconnected
 
+        self.history = []       # stack of previous scenes
+        self.skip_push = False
+
     def reset(self):
         """(Re)create both boards and the player's attack grid."""
         self.player_board   = create_board()

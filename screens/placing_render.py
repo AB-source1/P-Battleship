@@ -23,6 +23,15 @@ class PlacingRender:
         # Top bar with Restart/Quit buttons
         draw_top_bar(screen, state)
 
+        def back():
+            if state.history:
+                state.skip_push = True
+                state.game_state = state.history.pop()
+            else:
+                state.game_state = "menu"
+        draw_button(screen, "Back (esc)", 10, 40, 130, 30,
+                    Config.GRAY, Config.DARK_GRAY, back)
+
         # Player’s board with ships
         draw_grid(
             screen,
