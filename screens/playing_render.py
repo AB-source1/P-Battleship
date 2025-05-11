@@ -9,6 +9,15 @@ class PlayingRender:
     def draw(self, screen, state):
         draw_top_bar(screen, state)
 
+        score_str = f"Score: {state.score}"
+        draw_text_center(
+            screen,
+            score_str,
+            Config.WIDTH  // 2,
+            Config.TOP_BAR_HEIGHT + 20,
+            font_size=24
+        )
+
         # ─── NEW: draw elapsed play-time as MM:SS ───────────────
         if state.timer_start is not None:
             # milliseconds since play began

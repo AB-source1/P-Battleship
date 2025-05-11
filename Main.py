@@ -153,12 +153,19 @@ while state.running:
             state.history.append(prev_scene)
         state.skip_push = False
 
+
         
         # ─── entering “playing” ⇒ reset AI & start timer
         if state.game_state == "playing":
             playing_logic.reset()
             # record the moment play begins
             state.timer_start = pygame.time.get_ticks()
+           
+            # ─── RESET SCORING ─────────────────────
+            now = pygame.time.get_ticks()
+            state.score          = 0
+            state.hit_count      = 0
+            state.last_shot_time = now
 
     prev_scene = state.game_state
 

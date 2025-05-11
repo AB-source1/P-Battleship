@@ -39,3 +39,15 @@ def get_grid_pos(mouse_pos, offset_x, offset_y):
     if 0 <= row < Config.GRID_SIZE and 0 <= col < Config.GRID_SIZE:
         return row, col
     return None, None
+
+def fire_at(row: int, col: int, board: list[list[Cell]]) -> tuple[bool, None]:
+    """
+    Mark board[row][col] as HIT or MISS.
+    Returns (hit, None) since we don't track ship objects here.
+    """
+    if board[row][col] == Cell.SHIP:
+        board[row][col] = Cell.HIT
+        return True, None
+    else:
+        board[row][col] = Cell.MISS
+        return False, None

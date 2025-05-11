@@ -26,6 +26,11 @@ class GameState:
 
         self.timer_start = None    # will hold pygame.time.get_ticks() when play begins
 
+                # ─── SCORING STATE ───────────────────────────────────
+        self.score            = 0       # running total
+        self.last_shot_time   = None    # when the player last fired (ms)
+        self.hit_count        = 0       # total hits this round
+
         # Kick off first full reset
         self.reset_all()
         # Main loop flag
