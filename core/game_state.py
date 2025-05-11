@@ -24,6 +24,14 @@ class GameState:
         self.ai_shot_times     = []     # same for AI
         self.winner            = None   # "Player" or "AI"
 
+        # ─── pass & play state ────────────────────────────
+        self.pass_and_play_mode = False      # true if PP selected
+        self.pp_phase         = None        # one of None, 'place1','pass1','place2','play','passN'
+        self.current_player   = 1           # whose turn in PP gameplay
+        # two boards & attack grids
+        self.pp_boards   = {1: None, 2: None}
+        self.pp_attacks  = {1: None, 2: None}
+
         self.timer_start = None    # will hold pygame.time.get_ticks() when play begins
 
                 # ─── SCORING STATE ───────────────────────────────────
@@ -109,3 +117,14 @@ class GameState:
 
         # Invoke placement logic callback (e.g. PlacingLogic.reset)
         self.reset_callback()
+
+    def init_pass_and_play(self):
+        # call when user picks “Pass & Play”+        from game.board_helpers import create_board
+        self.pass_and_play_mode = True
+        self.pp_phase       = 'place1'
+        self.current_player = 1
+        # fresh empty boards & attack grids
+        self.pp_boards[1]  = create_board()
+        self.pp_boards[2]  = create_board()
+        self.pp_attacks[1] = create_board()
+        self.pp_attacks[2] = create_board()

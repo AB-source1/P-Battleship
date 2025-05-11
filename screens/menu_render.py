@@ -25,10 +25,13 @@ class MenuRender:
                     self.logic.open_settings)
 
         # Multiplayer (new)
-        draw_button(screen, "Multiplayer",
-                    100, 340, 200, 50,
-                    Config.BLUE, Config.DARK_GRAY,
-                    self.logic.go_to_lobby)
+        # LAN Multiplayer
+        draw_button(screen, "LAN Multiplayer", 100, 340, 200, 50, Config.BLUE, Config.DARK_GRAY,
+                    lambda: setattr(state, 'game_state', 'lobby'))
+
+        # Pass & Play 2‑player on one PC
+        draw_button(screen, "Pass & Play", 100, 410, 200, 50, Config.BLUE, Config.DARK_GRAY,
+                    lambda: state.init_pass_and_play())
 
         # Quit
         draw_button(screen, "Quit",
