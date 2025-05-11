@@ -1,13 +1,20 @@
 # screens/placing_logic.py
 
 import pygame
-from game.draggable_ship import DraggableShip
-from game.board_helpers import Cell, get_grid_pos
-from core.config import Config
-from helpers.draw_helpers import draw_top_bar
+import time
+from game.draggable_ship      import DraggableShip
+from game.board_helpers      import Cell, get_grid_pos, place_ship_randomly
+from core.config             import Config
+from core.game_state         import GameState
 
 class PlacingLogic:
-    def __init__(self, screen, state):
+    """
+    Handles both manual drag-and-drop placement and automatic “smart” placement.
+    In manual mode, the player drags ships onto the grid. In smart mode, all
+    ships are randomly placed at once and the game immediately advances.
+    """
+
+    def __init__(self, screen, state: GameState):
         self.screen       = screen
         self.state        = state
         self.active_ship  = None
@@ -17,15 +24,15 @@ class PlacingLogic:
         self.setup_ships()
 
     def setup_ships(self):
-        """Fill ship_queue from Config.SHIP_SIZES and set active/preview."""
+        """Initial population of ship_queue from Config.SHIP_SIZES."""
         self.ship_queue = [
             DraggableShip(size, *self.main_area_position())
             for size in Config.SHIP_SIZES
         ]
-        self.update_active_and_preview()  
+        self.update_active_and_preview()
 
     def update_active_and_preview(self):
-        """Pop the next ship as active and peek the one after as preview."""
+        """Rotate the next ship into active_ship, peek the next as preview_ship."""
         if self.ship_queue:
             self.active_ship = self.ship_queue.pop(0)
             self.active_ship.image.topleft = self.main_area_position()
@@ -36,18 +43,56 @@ class PlacingLogic:
             self.preview_ship = self.ship_queue[0]
             self.preview_ship.image.topleft = self.preview_area_position()
         else:
-            self.preview_ship = None  
+            self.preview_ship = None
 
     def main_area_position(self):
+        """Where the active ship sits when not dragged."""
         return (Config.WIDTH - 350, Config.HEIGHT // 2 - 40)
 
     def preview_area_position(self):
+        """Where the preview ship sits in the sidebar."""
         return (Config.WIDTH - 250, Config.HEIGHT // 2 - 100)
 
-    def try_place_on_grid(self, ship):
+    def reset(self):
         """
-        Attempt to lock the ship onto the grid.
-        Returns True on success, False otherwise.
+        Called on new game or restart. Clears the board and UI state,
+        then either auto-places ships (smart mode) or resets for manual placement.
+        """
+        # 1) Clear the board data
+        self.state.player_board = [
+            [Cell.EMPTY for _ in range(Config.GRID_SIZE)]
+            for _ in range(Config.GRID_SIZE)
+        ]
+
+        # 2) Clear drag/drop UI state
+        self.active_ship  = None
+        self.preview_ship = None
+        self.ship_queue   = []
+        self.placed_ships = []
+
+        # 3) Re-setup ship_queue
+        self.setup_ships()
+
+        # 4) Smart mode: auto-place and advance immediately
+        if Config.USE_SMART_SHIP_GENERATOR:
+            for size in Config.SHIP_SIZES:
+                place_ship_randomly(self.state.player_board, size)
+            # Count ships for win condition
+            self.state.player_ships = self.state.count_ships(self.state.player_board)
+
+            if not self.state.network:
+                # Single-player: go directly to playing
+                self.state.game_state = "playing"
+            else:
+                # Multiplayer: handshake then wait
+                self.state.network.send({"type":"placement_done"})
+                self.state.local_ready      = True
+                self.state.waiting_for_sync = True
+
+    def try_place_on_grid(self, ship: DraggableShip) -> bool:
+        """
+        Attempt to place 'ship' at its current center position.
+        Returns True if placement succeeded.
         """
         row, col = get_grid_pos(
             (ship.image.centerx, ship.image.centery),
@@ -56,7 +101,7 @@ class PlacingLogic:
         if row is None or col is None:
             return False
 
-        # Center the placement coords based on orientation
+        # Adjust origin so the ship’s center aligns properly
         if ship.orientation == 'h':
             col -= ship.size // 2
         else:
@@ -66,8 +111,9 @@ class PlacingLogic:
         coords = []
         fits   = True
 
+        # Check bounds and emptiness
         if ship.orientation == 'h':
-            if col < 0 or col + size > Config.GRID_SIZE or not (0 <= row < Config.GRID_SIZE):
+            if col < 0 or col + size > Config.GRID_SIZE:
                 fits = False
             else:
                 for i in range(size):
@@ -79,7 +125,7 @@ class PlacingLogic:
                         self.state.player_board[row][col+i] = Cell.SHIP
                         coords.append((row, col+i))
         else:
-            if row < 0 or row + size > Config.GRID_SIZE or not (0 <= col < Config.GRID_SIZE):
+            if row < 0 or row + size > Config.GRID_SIZE:
                 fits = False
             else:
                 for i in range(size):
@@ -94,58 +140,60 @@ class PlacingLogic:
         if fits:
             ship.place(coords)
             return True
-        return False  
+        return False
 
     def snap_back(self):
         """Return the active ship to its sidebar position."""
         if self.active_ship:
             self.active_ship.image.topleft = self.main_area_position()
 
-    def handle_event(self, event: pygame.event.Event, state):
+    def handle_event(self, event: pygame.event.Event, state: GameState):
         """
-        Handle dragging/rotation/placement of ships.
-        Once all ships are placed, in multiplayer send a 'placement_done'
-        handshake; otherwise jump to 'playing'.
+        Manual-placement input. Ignored entirely if smart mode is on.
         """
+        # In smart mode, bypass manual events
+        if Config.USE_SMART_SHIP_GENERATOR:
+            return
+
+        # Mouse down: start dragging
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.active_ship and self.active_ship.image.collidepoint(event.pos):
                 self.active_ship.start_dragging(*event.pos)
 
+        # Mouse move: update drag
         elif event.type == pygame.MOUSEMOTION:
             if self.active_ship and self.active_ship.dragging:
                 self.active_ship.update_position(*event.pos)
 
+        # Mouse up: attempt to place
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.active_ship and self.active_ship.dragging:
                 self.active_ship.stop_dragging()
-                mx, my = self.active_ship.image.center
 
+                # Snap visually to grid cell
+                mx, my = self.active_ship.image.center
                 col = (mx - Config.BOARD_OFFSET_X) // Config.CELL_SIZE
                 row = (my - Config.BOARD_OFFSET_Y) // Config.CELL_SIZE
-
                 if self.active_ship.orientation == 'h':
                     col -= self.active_ship.size // 2
                 else:
                     row -= self.active_ship.size // 2
 
-                if 0 <= row < Config.GRID_SIZE and 0 <= col < Config.GRID_SIZE:
-                    # Snap visually to the grid
+                if (0 <= row < Config.GRID_SIZE
+                    and 0 <= col < Config.GRID_SIZE):
                     self.active_ship.image.topleft = (
                         Config.BOARD_OFFSET_X + col * Config.CELL_SIZE,
                         Config.BOARD_OFFSET_Y + row * Config.CELL_SIZE
                     )
-
                     if self.try_place_on_grid(self.active_ship):
                         self.placed_ships.append(self.active_ship)
                         self.update_active_and_preview()
 
-                        # All ships placed?
+                        # If all ships placed, advance
                         if not self.active_ship and not self.preview_ship:
-                            # Single-player: go straight to playing
                             if not state.network:
-                                state.player_ships = state.count_ships(state.player_board)
+                                state.player_ships = state.count_ships(self.state.player_board)
                                 state.game_state   = "playing"
-                            # Multiplayer: send handshake and wait
                             else:
                                 state.network.send({"type":"placement_done"})
                                 state.local_ready      = True
@@ -155,14 +203,15 @@ class PlacingLogic:
                 else:
                     self.snap_back()
 
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_r and self.active_ship:
-                self.active_ship.rotate()  
+        # Rotate with R
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+            if self.active_ship:
+                self.active_ship.rotate()
 
-    def update(self, state):
+    def update(self, state: GameState):
         """
-        In multiplayer, poll for the peer's 'placement_done' or 'disconnect'.
-        Transition to 'playing' once both are ready.
+        In multiplayer manual mode, poll for the opponent’s ready/disconnect
+        and transition to playing when both sides have called placement_done.
         """
         if state.network and state.waiting_for_sync:
             msg = state.network.recv()
@@ -174,32 +223,5 @@ class PlacingLogic:
 
                 if state.local_ready and state.remote_ready:
                     state.waiting_for_sync = False
-                    state.player_ships     = state.count_ships(state.player_board)
+                    state.player_ships     = state.count_ships(self.state.player_board)
                     state.game_state       = "playing"
-
-    def undo_last_ship(self):
-        """Remove the most recently placed ship and return it to the queue."""
-        if self.placed_ships:
-            last_ship = self.placed_ships.pop()
-            for (r, c) in last_ship.coords:
-                self.state.player_board[r][c] = Cell.EMPTY
-
-            # Put the undone ship back at the front
-            if self.active_ship:
-                self.ship_queue.insert(0, self.active_ship)
-            self.active_ship = last_ship
-            self.active_ship.image.topleft = self.main_area_position()
-
-            if self.ship_queue:
-                self.preview_ship = self.ship_queue[0]
-                self.preview_ship.image.topleft = self.preview_area_position()
-            else:
-                self.preview_ship = None  
-
-    def reset(self):
-        """Clear all placement state and re-populate the ship queue."""
-        self.active_ship  = None
-        self.preview_ship = None
-        self.ship_queue   = []
-        self.placed_ships = []
-        self.setup_ships()  
