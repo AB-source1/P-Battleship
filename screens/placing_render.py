@@ -19,8 +19,8 @@ class PlacingRender:
             s.fill(Config.PREVIEW_GREEN if valid else Config.PREVIEW_RED)
             screen.blit(s, (x, y))
 
-
-
+    # ─── Section backgrounds ───────────────────────────────
+        
     def draw(self, screen, state):
         # Top bar with Restart/Quit buttons
         draw_top_bar(screen, state)
@@ -31,6 +31,12 @@ class PlacingRender:
             Config.GRAY, Config.DARK_GRAY,
             lambda: setattr(state, "game_state", "menu")
         )
+
+        # 1) Grid area background
+        grid_bg = pygame.Surface((Config.GRID_WIDTH, Config.GRID_WIDTH), pygame.SRCALPHA)
+        grid_bg.fill((0, 0, 0, 120))  # 120/255 alpha for a dark overlay
+        screen.blit(grid_bg, (Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y))  # uses Config.GRID_WIDTH & BOARD_OFFSET_Y :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
+
 
         # Player’s board with ships
         draw_grid(
