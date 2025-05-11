@@ -29,6 +29,13 @@ class GameState:
         # Main loop flag
         self.running = True
 
+        self.network = None       # will hold our Network instance
+        self.is_host = False      # True if this client is the host
+        self.local_ready    = False   # we’ve finished placement
+        self.remote_ready   = False   # peer has signaled ready
+        self.waiting_for_sync = False # show waiting overlay
+        self.opponent_left  = False   # peer disconnected
+
     def reset(self):
         """(Re)create both boards and the player's attack grid."""
         self.player_board   = create_board()

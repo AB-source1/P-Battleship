@@ -1,4 +1,7 @@
-from helpers.draw_helpers import draw_top_bar, draw_button
+# screens/menu_render.py
+
+import pygame
+from helpers.draw_helpers import draw_text_center, draw_button
 from core.config import Config
 
 class MenuRender:
@@ -6,14 +9,29 @@ class MenuRender:
         self.logic = logic
 
     def draw(self, screen, state):
-        draw_top_bar(screen, state)
+        # Title
+        draw_text_center(screen, "P-Battleship", Config.WIDTH//2, 100, 64)
 
+        # Single-player Play
         draw_button(screen, "Play",
-                    Config.WIDTH // 2 - 75, Config.HEIGHT // 2 - 50,
-                    150, 50, Config.GREEN, Config.DARK_GREEN,
+                    100, 200, 200, 50,
+                    Config.GREEN, Config.DARK_GREEN,
                     self.logic.start_game)
 
+        # Settings
         draw_button(screen, "Settings",
-                    Config.WIDTH // 2 - 75, Config.HEIGHT // 2 + 20,
-                    150, 50, Config.GRAY, Config.DARK_GRAY,
-                    self.logic.show_settings)
+                    100, 270, 200, 50,
+                    Config.GRAY, Config.DARK_GRAY,
+                    self.logic.open_settings)
+
+        # Multiplayer (new)
+        draw_button(screen, "Multiplayer",
+                    100, 340, 200, 50,
+                    Config.BLUE, Config.DARK_GRAY,
+                    self.logic.go_to_lobby)
+
+        # Quit
+        draw_button(screen, "Quit",
+                    100, 410, 200, 50,
+                    Config.RED, Config.RED,
+                    self.logic.quit)
