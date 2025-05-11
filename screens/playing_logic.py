@@ -34,6 +34,8 @@ class PlayingLogic:
         # Clear any pending shot from previous match
         if hasattr(self.state, 'pending_shot'):
             del self.state.pending_shot
+        
+        self.state.play_start_time = pygame.time.get_ticks()
 
     def handle_event(self, event: pygame.event.Event, state: GameState):
         """
