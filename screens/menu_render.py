@@ -31,10 +31,10 @@ class MenuRender:
 
         # Pass & Play 2‑player on one PC
         draw_button(screen, "Pass & Play", 100, 410, 200, 50, Config.BLUE, Config.DARK_GRAY,
-                    lambda: state.init_pass_and_play())
+                    lambda: (state.init_pass_and_play(), setattr(state, 'game_state', 'placing')))
 
         # Quit
         draw_button(screen, "Quit",
-                    100, 410, 200, 50,
+                    100, 480, 200, 50,
                     Config.RED, Config.RED,
                     self.logic.quit)
