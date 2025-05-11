@@ -28,11 +28,9 @@ Config.update_layout()
 
 # ─── GameState & Reset Wiring ────────────────────────────────────────────────
 state = GameState(lambda: None)
-placing_logic  = PlacingLogic(screen, state)
-placing_render = PlacingRender(placing_logic)
-state.reset_callback = placing_logic.reset
-# Now state.reset_all() will call placing_logic.reset() for ship placement
+prev_scene = state.game_state
 
+# ─── Logic & Renderers ───────────────────────────────────────────────────────
 menu_logic      = MenuLogic(screen, state)
 menu_render     = MenuRender(menu_logic)
 
@@ -42,11 +40,16 @@ settings_render = SettingsRender(settings_logic)
 lobby_logic     = LobbyLogic(screen, state)
 lobby_render    = LobbyRender(lobby_logic)
 
+placing_logic   = PlacingLogic(screen, state)
+placing_render  = PlacingRender(placing_logic)
+
 playing_logic   = PlayingLogic(screen, state)
 playing_render  = PlayingRender(playing_logic)
 
 stats_logic     = StatsLogic(screen, state)
 stats_render    = StatsRender(stats_logic)
+
+clock = pygame.time.Clock()
 
 def restart_game():
     """
@@ -62,20 +65,13 @@ def restart_game():
     lobby_logic.waiting     = False
     lobby_logic.ip_input    = ""
     lobby_logic.host_ip_str = ""
-
     state.local_ready      = False
     state.remote_ready     = False
-    state.waiting_for_sync = False
-    state.opponent_left    = False
-
-prev_scene = state.game_state
-clock = pygame.time.Clock()
 
 # ─── Main Loop ────────────────────────────────────────────────────────────────
-while state.running:
+while True:
+    # 1) Update AI/Network logic before handling input
     now = pygame.time.get_ticks()
-
-    # 1) Turn logic first so `my_turn` is updated before click handling
     if state.game_state == "playing":
         if state.network:
             playing_logic.handle_network_turn(now)
@@ -89,10 +85,18 @@ while state.running:
         if event.type == pygame.QUIT:
             state.show_quit_modal = True
 
-        # block input when any modal is visible
+        # ─── Handle Esc ────────────────────────────────────────
+        # Pressing Esc from any screen always jumps back to the main menu.
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if state.game_state != "menu":
+                state.game_state = "menu"   # Jump straight back
+            continue                          # Skip that event for the screen handlers
+
+        # Block input when any modal is visible
         if state.show_restart_modal or state.show_quit_modal:
             continue
 
+        # Dispatch to the current screen’s logic handler
         if   state.game_state == "menu":
             menu_logic.handle_event(event, state)
         elif state.game_state == "lobby":
@@ -106,12 +110,12 @@ while state.running:
         elif state.game_state == "stats":
             stats_logic.handle_event(event)
 
-    # 3) Detect entering "playing" to reinitialize turn flags
+    # 3) Reset flags when entering “playing”
     if prev_scene != state.game_state and state.game_state == "playing":
         playing_logic.reset()
     prev_scene = state.game_state
 
-    # 4) Draw background and active scene
+    # 4) Draw background and the active scene
     screen.blit(background, (0, 0))
     if   state.game_state == "menu":
         menu_render.draw(screen, state)
@@ -133,7 +137,6 @@ while state.running:
             restart_game()
         def _cancel_restart():
             state.show_restart_modal = False
-
         draw_modal(
             screen,
             title="Restart game?",
@@ -141,7 +144,6 @@ while state.running:
             on_yes=_confirm_restart,
             on_no=_cancel_restart
         )
-
     # 6) Quit confirmation modal
     elif state.show_quit_modal:
         def _confirm_quit():
@@ -149,31 +151,12 @@ while state.running:
             sys.exit()
         def _cancel_quit():
             state.show_quit_modal = False
-
         draw_modal(
             screen,
             title="Quit game?",
             subtitle="Are you sure you want to exit?",
             on_yes=_confirm_quit,
             on_no=_cancel_quit
-        )
-
-    # 7) Opponent-left modal
-    if state.opponent_left:
-        def _back_to_menu():
-            state.opponent_left = False
-            state.game_state    = "menu"
-        def _close_modal():
-            state.opponent_left = False
-
-        draw_modal(
-            screen,
-            title="Opponent Disconnected",
-            subtitle="The other player has left the game.",
-            on_yes=_back_to_menu,
-            on_no=_close_modal,
-            yes_text="Main Menu",
-            no_text="Close"
         )
 
     pygame.display.flip()

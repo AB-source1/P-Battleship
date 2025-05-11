@@ -19,9 +19,18 @@ class PlacingRender:
             s.fill(Config.PREVIEW_GREEN if valid else Config.PREVIEW_RED)
             screen.blit(s, (x, y))
 
+
+
     def draw(self, screen, state):
         # Top bar with Restart/Quit buttons
         draw_top_bar(screen, state)
+
+        draw_button(
+            screen, "Back (esc)",
+            10, 5, 130, 30,
+            Config.GRAY, Config.DARK_GRAY,
+            lambda: setattr(state, "game_state", "menu")
+        )
 
         # Player’s board with ships
         draw_grid(

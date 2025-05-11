@@ -9,6 +9,13 @@ class SettingsRender:
     def draw(self, screen, state):
         draw_top_bar(screen, state)
 
+        draw_button(
+            screen, "Back (esc)",
+            10, 45, 130, 30,
+            Config.GRAY, Config.DARK_GRAY,
+            lambda: setattr(state, "game_state", "menu")
+        )
+
         draw_text_center(screen, "Select Grid Size", Config.WIDTH // 2, 80, 40)
 
         if not self.logic.show_custom_input:

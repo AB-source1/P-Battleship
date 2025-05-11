@@ -12,6 +12,13 @@ class LobbyRender:
         # Title
         draw_text_center(screen, "Multiplayer Lobby", Config.WIDTH//2, 80, 48)
 
+        draw_button(
+            screen, "Back (esc)",
+            10, 10, 130, 30,
+            Config.GRAY, Config.DARK_GRAY,
+            lambda: setattr(state, "game_state", "menu")
+        )
+
         # Host + Join buttons
         draw_button(screen, "Host Game",
                     100, 200, 160, 50,
