@@ -9,6 +9,22 @@ class PlayingRender:
     def draw(self, screen, state):
         draw_top_bar(screen, state)
 
+        # ─── NEW: draw elapsed play-time as MM:SS ───────────────
+        if state.timer_start is not None:
+            # milliseconds since play began
+            elapsed_ms = pygame.time.get_ticks() - state.timer_start
+            total_sec = elapsed_ms // 1000
+            mins, secs = divmod(total_sec, 60)
+            timer_str = f"{mins:02d}:{secs:02d}"
+            # center it in the top bar (adjust font_size as needed)
+            draw_text_center(
+                screen,
+                timer_str,
+                Config.WIDTH // 2,
+                Config.TOP_BAR_HEIGHT // 2,
+                font_size=24
+            )
+
         if state.player_ships == 0:
             draw_text_center(screen,
                             f"{state.player_name or 'You'} lost! Click Restart",

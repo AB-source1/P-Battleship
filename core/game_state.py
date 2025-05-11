@@ -24,6 +24,8 @@ class GameState:
         self.ai_shot_times     = []     # same for AI
         self.winner            = None   # "Player" or "AI"
 
+        self.timer_start = None    # will hold pygame.time.get_ticks() when play begins
+
         # Kick off first full reset
         self.reset_all()
         # Main loop flag

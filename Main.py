@@ -153,9 +153,12 @@ while state.running:
             state.history.append(prev_scene)
         state.skip_push = False
 
-        # preserve your existing “entering playing ⇒ reset AI” hook
+        
+        # ─── entering “playing” ⇒ reset AI & start timer
         if state.game_state == "playing":
             playing_logic.reset()
+            # record the moment play begins
+            state.timer_start = pygame.time.get_ticks()
 
     prev_scene = state.game_state
 
