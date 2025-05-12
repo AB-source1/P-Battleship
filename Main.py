@@ -22,7 +22,7 @@ from helpers.draw_helpers   import draw_modal
 pygame.init()
 screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT),pygame.RESIZABLE)
 pygame.display.set_caption("P-Battleship")
-bg_image = pygame.image.load("resources/images/image.jpeg")
+bg_image = pygame.image.load("resources/images/cartoon_loading.png")
 background = pygame.transform.smoothscale(bg_image, (Config.WIDTH, Config.HEIGHT))
 Config.update_layout()
 

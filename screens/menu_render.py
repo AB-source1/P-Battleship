@@ -9,8 +9,8 @@ class MenuRender:
         self.logic = logic
 
     def draw(self, screen, state):
-        # Title
-        draw_text_center(screen, "P-Battleship", Config.WIDTH//2, 100, 64)
+        
+       
 
         # Single-player Play
         draw_button(screen, "Play",
