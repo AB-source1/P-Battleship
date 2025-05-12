@@ -69,11 +69,11 @@ class PlacingRender:
             self.logic.active_ship.rect.topleft = orig_topleft
 
             if preview_cells:
-                valid = all(
-                    state.player_board[r][c] == Cell.EMPTY
-                    for r, c in preview_cells
-                )
-                self.draw_preview(preview_cells, screen, valid)
+                # Draw the actual ship sprite at the snapped position
+                self.logic.active_ship.rect.center = snapped_center
+                self.logic.active_ship.draw(screen)
+                # restore its original sidebar position
+                self.logic.active_ship.rect.topleft = orig_topleft
 
         # Draw the draggable “active” ship
         if self.logic.active_ship:
@@ -81,20 +81,10 @@ class PlacingRender:
 
         # Draw the static “next ship” preview
         if self.logic.preview_ship:
-            w = Config.CELL_SIZE * self.logic.preview_ship.size
-            h = Config.CELL_SIZE
+            # Position and draw the next‐ship sprite instead of a grey box
             pos = self.logic.preview_area_position()
-            pygame.draw.rect(
-                screen,
-                Config.GRAY,
-                pygame.Rect(pos, (w, h))
-            )
-            pygame.draw.rect(
-                screen,
-                Config.WHITE,
-                pygame.Rect(pos, (w, h)),
-                2
-            )
+            self.logic.preview_ship.rect.topleft = pos
+            self.logic.preview_ship.draw(screen)
 
         # Rotate and Undo buttons
         draw_button(
