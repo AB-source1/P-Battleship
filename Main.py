@@ -1,5 +1,5 @@
 # Main.py
-
+import os
 import pygame
 import sys
 from core.config            import Config
@@ -22,8 +22,14 @@ from helpers.draw_helpers   import draw_modal
 pygame.init()
 screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT),pygame.RESIZABLE)
 pygame.display.set_caption("P-Battleship")
-bg_image = pygame.image.load("resources/images/image.jpeg")
-background = pygame.transform.smoothscale(bg_image, (Config.WIDTH, Config.HEIGHT))
+# ─── Load both menu & battle backgrounds ────────────────────────────────────
+bg_menu_img   = pygame.image.load("resources/images/cartoon_loading.png").convert()
+battle_bg_img = pygame.image.load("resources/images/cartoon_battle_bg.png").convert()
+
+# initial scale
+menu_background   = pygame.transform.smoothscale(bg_menu_img,   (Config.WIDTH, Config.HEIGHT))
+battle_background = pygame.transform.smoothscale(battle_bg_img, (Config.WIDTH, Config.HEIGHT))
+
 Config.update_layout()
 
 # ─── GameState & Reset Wiring ────────────────────────────────────────────────
@@ -100,10 +106,8 @@ while state.running:
                 pygame.RESIZABLE
             )
             # Rescale the background to fill the new size
-            background = pygame.transform.smoothscale(
-                bg_image,
-                (Config.WIDTH, Config.HEIGHT)
-            )
+            menu_background   = pygame.transform.smoothscale(bg_menu_img,   (Config.WIDTH, Config.HEIGHT))
+            battle_background = pygame.transform.smoothscale(battle_bg_img, (Config.WIDTH, Config.HEIGHT))
             # Recompute all your grid‐offsets, cell sizes, etc.
             Config.update_layout()
             continue    # skip any other handlers for this event
@@ -170,7 +174,13 @@ while state.running:
     prev_scene = state.game_state
 
     # 4) Draw background and active scene
-    screen.blit(background, (0, 0))
+    # choose the right backdrop
+    if state.game_state == "menu":
+        screen.blit(menu_background, (0, 0))
+    else:
+        screen.blit(battle_background, (0, 0))
+
+    # now layer on each screen’s UI
     if   state.game_state == "menu":
         menu_render.draw(screen, state)
     elif state.game_state == "lobby":

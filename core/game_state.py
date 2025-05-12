@@ -82,6 +82,8 @@ class GameState:
         # Boards & counts
         self.reset_with_counts()
 
+        self.placed_ships = []
+
         # Gameplay & UI state
         self.user_text         = ""
         self.player_name       = ""
@@ -109,3 +111,5 @@ class GameState:
 
         # Invoke placement logic callback (e.g. PlacingLogic.reset)
         self.reset_callback()
+
+        

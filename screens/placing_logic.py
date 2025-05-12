@@ -6,6 +6,7 @@ from game.board_helpers import Cell, get_grid_pos
 from core.config import Config
 from helpers.draw_helpers import draw_top_bar
 
+
 class PlacingLogic:
     def __init__(self, screen, state):
         self.screen       = screen
@@ -15,6 +16,9 @@ class PlacingLogic:
         self.ship_queue   = []
         self.placed_ships = []
         self.setup_ships()
+        self.grid_offset_x = Config.BOARD_OFFSET_X + 34
+        self.grid_offset_y = Config.BOARD_OFFSET_Y + 31
+
 
     def setup_ships(self):
         """Fill ship_queue from Config.SHIP_SIZES and set active/preview."""
@@ -28,13 +32,13 @@ class PlacingLogic:
         """Pop the next ship as active and peek the one after as preview."""
         if self.ship_queue:
             self.active_ship = self.ship_queue.pop(0)
-            self.active_ship.image.topleft = self.main_area_position()
+            self.active_ship.rect.topleft = self.main_area_position()
         else:
             self.active_ship = None
 
         if self.ship_queue:
             self.preview_ship = self.ship_queue[0]
-            self.preview_ship.image.topleft = self.preview_area_position()
+            self.preview_ship.rect.topleft = self.preview_area_position()
         else:
             self.preview_ship = None  
 
@@ -50,8 +54,8 @@ class PlacingLogic:
         Returns True on success, False otherwise.
         """
         row, col = get_grid_pos(
-            (ship.image.centerx, ship.image.centery),
-            Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y
+            (ship.rect.centerx, ship.rect.centery),
+            self.grid_offset_x, self.grid_offset_y
         )
         if row is None or col is None:
             return False
@@ -99,7 +103,7 @@ class PlacingLogic:
     def snap_back(self):
         """Return the active ship to its sidebar position."""
         if self.active_ship:
-            self.active_ship.image.topleft = self.main_area_position()
+            self.active_ship.rect.topleft = self.main_area_position()
 
     def handle_event(self, event: pygame.event.Event, state):
         """
@@ -108,7 +112,7 @@ class PlacingLogic:
         handshake; otherwise jump to 'playing'.
         """
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.active_ship and self.active_ship.image.collidepoint(event.pos):
+            if self.active_ship and self.active_ship.rect.collidepoint(event.pos):
                 self.active_ship.start_dragging(*event.pos)
 
         elif event.type == pygame.MOUSEMOTION:
@@ -118,10 +122,10 @@ class PlacingLogic:
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.active_ship and self.active_ship.dragging:
                 self.active_ship.stop_dragging()
-                mx, my = self.active_ship.image.center
-
-                col = (mx - Config.BOARD_OFFSET_X) // Config.CELL_SIZE
-                row = (my - Config.BOARD_OFFSET_Y) // Config.CELL_SIZE
+                mx, my = self.active_ship.rect.center
+                
+                col = (mx - self.grid_offset_x) // Config.CELL_SIZE
+                row = (my - self.grid_offset_y) // Config.CELL_SIZE
 
                 if self.active_ship.orientation == 'h':
                     col -= self.active_ship.size // 2
@@ -130,9 +134,9 @@ class PlacingLogic:
 
                 if 0 <= row < Config.GRID_SIZE and 0 <= col < Config.GRID_SIZE:
                     # Snap visually to the grid
-                    self.active_ship.image.topleft = (
-                        Config.BOARD_OFFSET_X + col * Config.CELL_SIZE,
-                        Config.BOARD_OFFSET_Y + row * Config.CELL_SIZE
+                    self.active_ship.rect.topleft = (
+                        self.grid_offset_x + col * Config.CELL_SIZE,
+                        self.grid_offset_y + row * Config.CELL_SIZE
                     )
 
                     if self.try_place_on_grid(self.active_ship):
@@ -143,13 +147,17 @@ class PlacingLogic:
                         if not self.active_ship and not self.preview_ship:
                             # Single-player: go straight to playing
                             if not state.network:
-                                state.player_ships = state.count_ships(state.player_board)
-                                state.game_state   = "playing"
+                                state.player_ships  = state.count_ships(state.player_board)
+                                # save the sprite objects for the playing screen
+                                state.placed_ships  = self.placed_ships.copy()
+                                state.game_state    = "playing"
                             # Multiplayer: send handshake and wait
                             else:
                                 state.network.send({"type":"placement_done"})
                                 state.local_ready      = True
                                 state.waiting_for_sync = True
+                                # also persist sprites for when multiplayer actually starts
+                                state.placed_ships    = self.placed_ships.copy()
                     else:
                         self.snap_back()
                 else:
