@@ -52,8 +52,28 @@ class PlayingRender:
                     horiz = all(r0 == cluster[0][0] for r0, _ in cluster)
 
                     # find top-left cell
+                    # find the min/max row/col of this hit cluster
                     min_r = min(r0 for r0, _ in cluster)
+                    max_r = max(r0 for r0, _ in cluster)
                     min_c = min(c0 for _, c0 in cluster)
+                    max_c = max(c0 for _, c0 in cluster)
+
+                    # ─── only reveal once **all** segments are hit ─────────
+                    # if horizontal, check cell immediately left/right
+                    if horiz:
+                        left  = (min_c - 1)
+                        right = (max_c + 1)
+                        if (0 <= left  < cols and state.computer_board[min_r][left ] == Cell.SHIP) or \
+                           (0 <= right < cols and state.computer_board[min_r][right] == Cell.SHIP):
+                            continue  # still part unhit
+                    else:
+                        up   = (min_r - 1)
+                        down = (max_r + 1)
+                        if (0 <= up   < rows and state.computer_board[up  ][min_c] == Cell.SHIP) or \
+                           (0 <= down < rows and state.computer_board[down][min_c] == Cell.SHIP):
+                            continue  # still part unhit
+
+                    # now all segments are HIT ⇒ reveal the sunk ship
 
                     # create a throwaway ship sprite of that size
                     ship = DraggableShip(size, 0, 0)
