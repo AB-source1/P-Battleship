@@ -6,6 +6,7 @@ from game.board_helpers import Cell, get_grid_pos
 from core.config import Config
 from helpers.draw_helpers import draw_top_bar
 
+
 class PlacingLogic:
     def __init__(self, screen, state):
         self.screen       = screen
@@ -15,6 +16,9 @@ class PlacingLogic:
         self.ship_queue   = []
         self.placed_ships = []
         self.setup_ships()
+        self.grid_offset_x = Config.BOARD_OFFSET_X + 34
+        self.grid_offset_y = Config.BOARD_OFFSET_Y + 31
+
 
     def setup_ships(self):
         """Fill ship_queue from Config.SHIP_SIZES and set active/preview."""
@@ -51,7 +55,7 @@ class PlacingLogic:
         """
         row, col = get_grid_pos(
             (ship.rect.centerx, ship.rect.centery),
-            Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y
+            self.grid_offset_x, self.grid_offset_y
         )
         if row is None or col is None:
             return False
@@ -119,9 +123,9 @@ class PlacingLogic:
             if self.active_ship and self.active_ship.dragging:
                 self.active_ship.stop_dragging()
                 mx, my = self.active_ship.rect.center
-
-                col = (mx - Config.BOARD_OFFSET_X) // Config.CELL_SIZE
-                row = (my - Config.BOARD_OFFSET_Y) // Config.CELL_SIZE
+                
+                col = (mx - self.grid_offset_x) // Config.CELL_SIZE
+                row = (my - self.grid_offset_y) // Config.CELL_SIZE
 
                 if self.active_ship.orientation == 'h':
                     col -= self.active_ship.size // 2
@@ -131,8 +135,8 @@ class PlacingLogic:
                 if 0 <= row < Config.GRID_SIZE and 0 <= col < Config.GRID_SIZE:
                     # Snap visually to the grid
                     self.active_ship.rect.topleft = (
-                        Config.BOARD_OFFSET_X + col * Config.CELL_SIZE,
-                        Config.BOARD_OFFSET_Y + row * Config.CELL_SIZE
+                        self.grid_offset_x + col * Config.CELL_SIZE,
+                        self.grid_offset_y + row * Config.CELL_SIZE
                     )
 
                     if self.try_place_on_grid(self.active_ship):
