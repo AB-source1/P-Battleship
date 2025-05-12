@@ -65,29 +65,21 @@ class PlacingRender:
 
         # Live placement preview when dragging
         if self.logic.active_ship and self.logic.active_ship.dragging:
-            # Snap a temporary center to compute preview cells
+            # Compute which grid cells the ship would occupy
             mx, my = self.logic.active_ship.rect.center
-            col = (mx - Config.BOARD_OFFSET_X) // Config.CELL_SIZE
             row = (my - Config.BOARD_OFFSET_Y) // Config.CELL_SIZE
-            snapped_center = (
-                Config.BOARD_OFFSET_X + col * Config.CELL_SIZE + Config.CELL_SIZE // 2,
-                Config.BOARD_OFFSET_Y + row * Config.CELL_SIZE + Config.CELL_SIZE // 2
-            )
-            # Save/restore the ship’s real position
-            orig_topleft = self.logic.active_ship.rect.topleft
-            self.logic.active_ship.rect.center = snapped_center
+            col = (mx - Config.BOARD_OFFSET_X) // Config.CELL_SIZE
 
             preview_cells = self.logic.active_ship.get_preview_cells(
                 Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y
             )
-            self.logic.active_ship.rect.topleft = orig_topleft
-
             if preview_cells:
-                # Draw the actual ship sprite at the snapped position
-                self.logic.active_ship.rect.center = snapped_center
-                self.logic.active_ship.draw(screen)
-                # restore its original sidebar position
-                self.logic.active_ship.rect.topleft = orig_topleft
+                # Highlight the cells instead of showing the sprite
+                valid = all(
+                    state.player_board[r][c] == Cell.EMPTY
+                    for r, c in preview_cells
+                )
+                self.draw_preview(preview_cells, screen, valid)
 
         # Draw the draggable “active” ship
         if self.logic.active_ship:
