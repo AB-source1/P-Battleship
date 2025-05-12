@@ -29,9 +29,14 @@ class MenuRender:
                     100, 340, 200, 50,
                     Config.BLUE, Config.DARK_GRAY,
                     self.logic.go_to_lobby)
+         # Pass & Play (local 2-player)
+        draw_button(screen, "Pass and Play",
+                    100, 410, 200, 50,
+                    Config.GREEN, Config.DARK_GREEN,
+                    self.logic.start_pass_and_play)
 
         # Quit
         draw_button(screen, "Quit",
-                    100, 410, 200, 50,
+                    100, 480, 200, 50,
                     Config.RED, Config.RED,
                     self.logic.quit)

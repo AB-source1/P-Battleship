@@ -37,6 +37,18 @@ class MenuLogic:
             if 100 < x < 300 and 340 < y < 390:
                 self.go_to_lobby()
 
-            # Quit button
+             # Pass and Play button
             if 100 < x < 300 and 410 < y < 460:
+                self.start_pass_and_play()
+
+            # Quit button
+            if 100 < x < 300 and 480 < y < 530:
                 self.quit()
+
+    def start_pass_and_play(self):
+        """Initialize a local 2-player pass & play."""
+        # flag GameState so PlacingLogic knows to do two placements
+        self.state.pass_local    = True
+        self.state.pass_stage    = 0    # 0 ⇒ first placement
+        self.state.current_player= 1
+        self.state.game_state    = "placing"
