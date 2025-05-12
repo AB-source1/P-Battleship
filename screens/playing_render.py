@@ -1,5 +1,5 @@
 import pygame
-from helpers.draw_helpers import draw_top_bar, draw_grid, draw_text_center, draw_button
+from helpers.draw_helpers import draw_top_bar, draw_grid, draw_text_center, draw_button, draw_x
 from core.config import Config
 from game.draggable_ship import DraggableShip
 from game.board_helpers import Cell
@@ -111,6 +111,17 @@ class PlayingRender:
                             Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT)
 
                         # draw the grid without the default blue‐ship squares
+            # 1) draw your fleet grid (no blue ship‐blocks)
+            
+            draw_grid(
+                screen,
+                state.player_attacks,
+                Config.ENEMY_OFFSET_X,
+                Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+                show_ships=False
+            )
+            
+            
             draw_grid(
                 screen,
                 state.player_board,
@@ -118,25 +129,23 @@ class PlayingRender:
                 Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
                 show_ships=False
             )
-
-            # overlay each placed ship’s image sprite
-            for ship in getattr(state, 'placed_ships', []):
-                # find its top-left grid cell
-                rows = [r for r, c in ship.coords]
-                cols = [c for r, c in ship.coords]
+    
+            # 2) overlay each placed ship sprite
+            for ship in state.placed_ships:
+                rows = [r for r,c in ship.coords]
+                cols = [c for r,c in ship.coords]
                 row0, col0 = min(rows), min(cols)
-
-                # compute pixel position on the playing board
                 x = Config.BOARD_OFFSET_X + col0 * Config.CELL_SIZE
                 y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + row0 * Config.CELL_SIZE
-
-                # blit the ship sprite exactly as it was placed
                 screen.blit(ship.image, (x, y))
-
-            draw_grid(screen, state.player_attacks,
-                      Config.ENEMY_OFFSET_X,
-                      Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT)
-
-            draw_text_center(screen,
-                            f"Admiral {state.player_name}",
-                            100, 20 + Config.TOP_BAR_HEIGHT)
+    
+            # 3) now draw your hit/miss markers on top of the ships
+            for r in range(Config.GRID_SIZE):
+                for c in range(Config.GRID_SIZE):
+                    cell = state.player_board[r][c]
+                    px = Config.BOARD_OFFSET_X + c * Config.CELL_SIZE + Config.CELL_SIZE//2
+                    py = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + r * Config.CELL_SIZE + Config.CELL_SIZE//2
+                    if cell == Cell.MISS:
+                        pygame.draw.circle(screen, Config.BLUE, (px, py), 5)
+                    elif cell == Cell.HIT:
+                        draw_x(screen, px, py, Config.CELL_SIZE)
