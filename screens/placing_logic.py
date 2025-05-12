@@ -28,13 +28,13 @@ class PlacingLogic:
         """Pop the next ship as active and peek the one after as preview."""
         if self.ship_queue:
             self.active_ship = self.ship_queue.pop(0)
-            self.active_ship.image.topleft = self.main_area_position()
+            self.active_ship.rect.topleft = self.main_area_position()
         else:
             self.active_ship = None
 
         if self.ship_queue:
             self.preview_ship = self.ship_queue[0]
-            self.preview_ship.image.topleft = self.preview_area_position()
+            self.preview_ship.rect.topleft = self.preview_area_position()
         else:
             self.preview_ship = None  
 
@@ -50,7 +50,7 @@ class PlacingLogic:
         Returns True on success, False otherwise.
         """
         row, col = get_grid_pos(
-            (ship.image.centerx, ship.image.centery),
+            (ship.rect.centerx, ship.rect.centery),
             Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y
         )
         if row is None or col is None:
@@ -99,7 +99,7 @@ class PlacingLogic:
     def snap_back(self):
         """Return the active ship to its sidebar position."""
         if self.active_ship:
-            self.active_ship.image.topleft = self.main_area_position()
+            self.active_ship.rect.topleft = self.main_area_position()
 
     def handle_event(self, event: pygame.event.Event, state):
         """
@@ -108,7 +108,7 @@ class PlacingLogic:
         handshake; otherwise jump to 'playing'.
         """
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.active_ship and self.active_ship.image.collidepoint(event.pos):
+            if self.active_ship and self.active_ship.rect.collidepoint(event.pos):
                 self.active_ship.start_dragging(*event.pos)
 
         elif event.type == pygame.MOUSEMOTION:
@@ -118,7 +118,7 @@ class PlacingLogic:
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.active_ship and self.active_ship.dragging:
                 self.active_ship.stop_dragging()
-                mx, my = self.active_ship.image.center
+                mx, my = self.active_ship.rect.center
 
                 col = (mx - Config.BOARD_OFFSET_X) // Config.CELL_SIZE
                 row = (my - Config.BOARD_OFFSET_Y) // Config.CELL_SIZE
@@ -130,7 +130,7 @@ class PlacingLogic:
 
                 if 0 <= row < Config.GRID_SIZE and 0 <= col < Config.GRID_SIZE:
                     # Snap visually to the grid
-                    self.active_ship.image.topleft = (
+                    self.active_ship.rect.topleft = (
                         Config.BOARD_OFFSET_X + col * Config.CELL_SIZE,
                         Config.BOARD_OFFSET_Y + row * Config.CELL_SIZE
                     )

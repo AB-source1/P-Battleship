@@ -52,7 +52,7 @@ class PlacingRender:
         # Live placement preview when dragging
         if self.logic.active_ship and self.logic.active_ship.dragging:
             # Snap a temporary center to compute preview cells
-            mx, my = self.logic.active_ship.image.center
+            mx, my = self.logic.active_ship.rect.center
             col = (mx - Config.BOARD_OFFSET_X) // Config.CELL_SIZE
             row = (my - Config.BOARD_OFFSET_Y) // Config.CELL_SIZE
             snapped_center = (
@@ -60,13 +60,13 @@ class PlacingRender:
                 Config.BOARD_OFFSET_Y + row * Config.CELL_SIZE + Config.CELL_SIZE // 2
             )
             # Save/restore the ship’s real position
-            orig_topleft = self.logic.active_ship.image.topleft
-            self.logic.active_ship.image.center = snapped_center
+            orig_topleft = self.logic.active_ship.rect.topleft
+            self.logic.active_ship.rect.center = snapped_center
 
             preview_cells = self.logic.active_ship.get_preview_cells(
                 Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y
             )
-            self.logic.active_ship.image.topleft = orig_topleft
+            self.logic.active_ship.rect.topleft = orig_topleft
 
             if preview_cells:
                 valid = all(
