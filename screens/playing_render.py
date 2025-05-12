@@ -11,9 +11,9 @@ class PlayingRender:
     def draw(self, screen, state):
         draw_top_bar(screen, state)
 
-        # ─── PASS & PLAY MODE VIEW ────────────────────────────
+        # ─── PASS & PLAY MODE ───────────────────────────────
         if state.pass_play_mode:
-            # Whose turn?
+            # Top‐center label: whose turn is it
             draw_text_center(
                 screen,
                 f"Player {state.current_player+1}'s Turn",
@@ -21,23 +21,26 @@ class PlayingRender:
                 Config.TOP_BAR_HEIGHT + 50
             )
 
-            # Current player's attack grid on the left
+            # --- LEFT: Player 1’s board (ships hidden) ---
             draw_grid(
                 screen,
-                state.pass_play_attacks[state.current_player],
-                Config.ENEMY_OFFSET_X,
-                Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
-                show_ships=False
-            )
-            # Opponent's board (ships hidden) on the right
-            draw_grid(
-                screen,
-                state.pass_play_boards[1 - state.current_player],
+                state.pass_play_boards[0],
                 Config.BOARD_OFFSET_X,
                 Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
                 show_ships=False
             )
+
+            # --- RIGHT: Player 2’s board (ships hidden) ---
+            draw_grid(
+                screen,
+                state.pass_play_boards[1],
+                Config.ENEMY_OFFSET_X,
+                Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+                show_ships=False
+            )
+            # quit here so none of your old single-/multi-player draws run
             return
+        # ──────────────────────────────────────────────────────
  
         score_str = f"Score: {state.score}"
         draw_text_center(
