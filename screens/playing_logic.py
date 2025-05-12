@@ -43,6 +43,37 @@ class PlayingLogic:
         - In multiplayer, queue a pending shot when it's our turn.
         - In single-player, resolve a shot against the AI and update score.
         """
+            # only in Pass&Play, local two‐player mode:
+        if state.pass_play_mode:
+            if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+                return
+            # whose turn?
+            p = state.current_player
+            row, col = get_grid_pos(
+                event.pos,
+                Config.ENEMY_OFFSET_X if p==0 else Config.BOARD_OFFSET_X,
+                Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT
+            )
+            if row is None: return
+            attacks = state.pass_play_attacks[p]
+            board   = state.pass_play_boards[1-p]
+            if attacks[row][col] != Cell.EMPTY: return
+
+            # record shot
+            hit, _ = fire_at(row, col, board)
+            attacks[row][col] = Cell.HIT if hit else Cell.MISS
+            # check victory
+            if state.count_ships(board)==0:
+                state.winner    = f"Player {p+1}"
+                state.game_state = "stats"
+                return
+            # flip turn
+            state.current_player = 1 - p
+            # switch what you draw next
+            state.player_attacks = state.pass_play_attacks[state.current_player]
+            state.player_board   = state.pass_play_boards[1 - state.current_player]
+            return
+
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return
 

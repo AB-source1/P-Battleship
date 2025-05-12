@@ -11,6 +11,34 @@ class PlayingRender:
     def draw(self, screen, state):
         draw_top_bar(screen, state)
 
+        # ─── PASS & PLAY MODE VIEW ────────────────────────────
+        if state.pass_play_mode:
+            # Whose turn?
+            draw_text_center(
+                screen,
+                f"Player {state.current_player+1}'s Turn",
+                Config.WIDTH // 2,
+                Config.TOP_BAR_HEIGHT + 50
+            )
+
+            # Current player's attack grid on the left
+            draw_grid(
+                screen,
+                state.pass_play_attacks[state.current_player],
+                Config.ENEMY_OFFSET_X,
+                Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+                show_ships=False
+            )
+            # Opponent's board (ships hidden) on the right
+            draw_grid(
+                screen,
+                state.pass_play_boards[1 - state.current_player],
+                Config.BOARD_OFFSET_X,
+                Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+                show_ships=False
+            )
+            return
+ 
         score_str = f"Score: {state.score}"
         draw_text_center(
             screen,
@@ -20,6 +48,17 @@ class PlayingRender:
             font_size=24
         )
 
+
+        
+        # Your fleet (hidden ships)
+        draw_grid(
+            screen,
+            state.pass_play_boards[state.current_player],
+            Config.BOARD_OFFSET_X,
+            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False
+        )
+        return
 
         rows = Config.GRID_SIZE
         cols = Config.GRID_SIZE

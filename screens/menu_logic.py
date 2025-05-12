@@ -2,6 +2,7 @@
 
 import pygame
 from core.game_state import GameState
+from game.board_helpers import create_board
 
 class MenuLogic:
     def __init__(self, screen, state: GameState):
@@ -46,9 +47,23 @@ class MenuLogic:
                 self.quit()
 
     def start_pass_and_play(self):
-        """Initialize a local 2-player pass & play."""
-        # flag GameState so PlacingLogic knows to do two placements
-        self.state.pass_local    = True
-        self.state.pass_stage    = 0    # 0 ⇒ first placement
-        self.state.current_player= 1
-        self.state.game_state    = "placing"
+        """
+        Kick off a local two-player Pass & Play game:
+         - flip on pass_play_mode
+         - zero out the placement stage
+         - allocate two empty boards (ships + attacks)
+         - jump into the placing phase
+        """
+        # 1) Turn on pass & play
+        self.state.pass_play_mode   = True
+
+        # 2) We're about to place Player 1 first
+        self.state.pass_play_stage  = 0
+        self.state.current_player   = 0
+
+        # 3) Build two fresh boards for ships & two for attacks
+        self.state.pass_play_boards  = [create_board(), create_board()]
+        self.state.pass_play_attacks = [create_board(), create_board()]
+
+        # 4) Switch to the placement screen
+        self.state.game_state       = "placing"
