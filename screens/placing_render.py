@@ -32,14 +32,28 @@ class PlacingRender:
         draw_button(screen, "Back (esc)", 10, 40, 130, 30,
                     Config.GRAY, Config.DARK_GRAY, back)
 
-        # Player’s board with ships
+       # Player’s board (don’t auto‐draw ships as blue squares)
         draw_grid(
             screen,
             state.player_board,
             Config.BOARD_OFFSET_X,
             Config.BOARD_OFFSET_Y,
-            show_ships=True
+            show_ships=False
         )
+
+        # Overlay each placed ship’s real sprite at its grid location
+        for ship in self.logic.placed_ships:
+            # find the top-left cell of this ship
+            rows = [r for r, c in ship.coords]
+            cols = [c for r, c in ship.coords]
+            row0, col0 = min(rows), min(cols)
+
+            # compute pixel position on the grid
+            x = Config.BOARD_OFFSET_X + col0 * Config.CELL_SIZE
+            y = Config.BOARD_OFFSET_Y + row0 * Config.CELL_SIZE
+
+            # blit the sprite (already rotated/oriented)  
+            screen.blit(ship.image, (x, y))
 
         # “Ships Left” counter
         ships_left = len(self.logic.ship_queue) + (1 if self.logic.active_ship else 0)
