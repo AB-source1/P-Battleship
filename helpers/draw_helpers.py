@@ -35,6 +35,7 @@ def draw_top_bar(screen, state):
         Config.RED, Config.DARK_GRAY,
         lambda: setattr(state, 'show_quit_modal', True)
     )
+    
 
 def toggle_audio(state):
     state.audio_enabled = not state.audio_enabled
@@ -123,3 +124,20 @@ def draw_text_input_box(screen, user_text):
     pygame.draw.rect(screen, Config.WHITE, input_box, 2)
     name_surface = font.render(user_text, True, Config.WHITE)
     screen.blit(name_surface, (input_box.x + 10, input_box.y + 5))
+
+def draw_x(screen, x, y, cell_size):
+    """
+    Draw a red 'X' centered at (x,y) spanning cell_size.
+    """
+    half = cell_size // 2
+    color = Config.RED
+    # top-left → bottom-right
+    pygame.draw.line(screen, color,
+                     (x - half, y - half),
+                     (x + half, y + half),
+                     2)
+    # top-right → bottom-left
+    pygame.draw.line(screen, color,
+                     (x + half, y - half),
+                     (x - half, y + half),
+                     2)
