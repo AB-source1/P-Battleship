@@ -1,6 +1,8 @@
 import pygame
 from helpers.draw_helpers import draw_top_bar, draw_grid, draw_text_center, draw_button
 from core.config import Config
+from game.draggable_ship import DraggableShip
+from game.board_helpers import Cell
 
 class PlayingRender:
     def __init__(self, logic):
@@ -17,6 +19,53 @@ class PlayingRender:
             Config.TOP_BAR_HEIGHT + 20,
             font_size=24
         )
+
+
+        rows = Config.GRID_SIZE
+        cols = Config.GRID_SIZE
+        visited = set()
+        for r in range(rows):
+            for c in range(cols):
+                # find each unvisited hit cell
+                if state.computer_board[r][c] == Cell.HIT and (r, c) not in visited:
+                    # BFS to collect contiguous hits
+                    cluster = [(r, c)]
+                    queue = [(r, c)]
+                    visited.add((r, c))
+                    while queue:
+                        rr, cc = queue.pop(0)
+                        for dr, dc in [(1,0),(-1,0),(0,1),(0,-1)]:
+                            nr, nc = rr+dr, cc+dc
+                            if (0 <= nr < rows and 0 <= nc < cols
+                                and state.computer_board[nr][nc] == Cell.HIT
+                                and (nr, nc) not in visited):
+                                visited.add((nr, nc))
+                                queue.append((nr, nc))
+                                cluster.append((nr, nc))
+
+                    size = len(cluster)
+                    # only reveal real ships (we have art for sizes 3,4,5)
+                    from game.draggable_ship import SHIP_IMAGE_FILES
+                    if size not in SHIP_IMAGE_FILES:
+                        continue
+                    # determine orientation
+                    horiz = all(r0 == cluster[0][0] for r0, _ in cluster)
+
+                    # find top-left cell
+                    min_r = min(r0 for r0, _ in cluster)
+                    min_c = min(c0 for _, c0 in cluster)
+
+                    # create a throwaway ship sprite of that size
+                    ship = DraggableShip(size, 0, 0)
+                    if not horiz:
+                        ship.rotate()  # make it vertical
+
+                    # compute pixel pos (account for top bar offset)
+                    x = Config.ENEMY_OFFSET_X + min_c * Config.CELL_SIZE
+                    y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + min_r * Config.CELL_SIZE
+
+                    # blit the ship image under the X’s
+                    screen.blit(ship.image, (x, y))
 
         # ─── NEW: draw elapsed play-time as MM:SS ───────────────
         if state.timer_start is not None:
