@@ -143,13 +143,17 @@ class PlacingLogic:
                         if not self.active_ship and not self.preview_ship:
                             # Single-player: go straight to playing
                             if not state.network:
-                                state.player_ships = state.count_ships(state.player_board)
-                                state.game_state   = "playing"
+                                state.player_ships  = state.count_ships(state.player_board)
+                                # save the sprite objects for the playing screen
+                                state.placed_ships  = self.placed_ships.copy()
+                                state.game_state    = "playing"
                             # Multiplayer: send handshake and wait
                             else:
                                 state.network.send({"type":"placement_done"})
                                 state.local_ready      = True
                                 state.waiting_for_sync = True
+                                # also persist sprites for when multiplayer actually starts
+                                state.placed_ships    = self.placed_ships.copy()
                     else:
                         self.snap_back()
                 else:

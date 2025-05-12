@@ -61,10 +61,28 @@ class PlayingRender:
                             Config.ENEMY_OFFSET_X + Config.GRID_WIDTH // 2,
                             Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT)
 
-            draw_grid(screen, state.player_board,
-                      Config.BOARD_OFFSET_X,
-                      Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
-                      show_ships=True)
+                        # draw the grid without the default blue‐ship squares
+            draw_grid(
+                screen,
+                state.player_board,
+                Config.BOARD_OFFSET_X,
+                Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+                show_ships=False
+            )
+
+            # overlay each placed ship’s image sprite
+            for ship in getattr(state, 'placed_ships', []):
+                # find its top-left grid cell
+                rows = [r for r, c in ship.coords]
+                cols = [c for r, c in ship.coords]
+                row0, col0 = min(rows), min(cols)
+
+                # compute pixel position on the playing board
+                x = Config.BOARD_OFFSET_X + col0 * Config.CELL_SIZE
+                y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + row0 * Config.CELL_SIZE
+
+                # blit the ship sprite exactly as it was placed
+                screen.blit(ship.image, (x, y))
 
             draw_grid(screen, state.player_attacks,
                       Config.ENEMY_OFFSET_X,
