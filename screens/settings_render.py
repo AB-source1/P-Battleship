@@ -1,55 +1,165 @@
+import os
+import sys
 import pygame
-from helpers.draw_helpers import draw_top_bar, draw_text_center, draw_button, draw_text_input_box
 from core.config import Config
+from game.board_helpers import Cell
 
-class SettingsRender:
-    def __init__(self, logic):
-        self.logic = logic
+button_states = {}
 
-    def draw(self, screen, state):
-        draw_top_bar(screen, state)
+# ─── Ship Image Loader (vertical base, rotate for horizontal) ───
+base_ship_images = {
+    3: pygame.image.load(os.path.join("images", "ShipDestroyerHull.png")),
+    4: pygame.image.load(os.path.join("images", "ShipSubMarineHull.png")),
+    5: pygame.image.load(os.path.join("images", "ShipBattleshipHull.png"))
+}
 
-        draw_text_center(screen, "Select Grid Size", Config.WIDTH // 2, 80, 40)
+ship_images = {}
 
-        if not self.logic.show_custom_input:
-            draw_button(screen, "5x5", Config.WIDTH // 2 - 200, 150, 100, 40,
-                        Config.GRAY, Config.DARK_GRAY, lambda: self.logic.apply_grid_size(5))
+# Pre-scale and rotate into both orientations
+for size, base_img in base_ship_images.items():
+    vert_scaled = pygame.transform.scale(base_img, (Config.CELL_SIZE, Config.CELL_SIZE * size))
+    horiz_scaled = pygame.transform.rotate(
+        pygame.transform.scale(base_img, (Config.CELL_SIZE, Config.CELL_SIZE * size)), -90
+    )
+    ship_images[size] = {'v': vert_scaled, 'h': horiz_scaled}
 
-            draw_button(screen, "10x10", Config.WIDTH // 2 - 50, 150, 100, 40,
-                        Config.GRAY, Config.DARK_GRAY, lambda: self.logic.apply_grid_size(10))
+def draw_top_bar(screen, state):
+    bar_rect = pygame.Rect(0, 0, Config.WIDTH, Config.TOP_BAR_HEIGHT)
+    pygame.draw.rect(screen, Config.GRAY, bar_rect)
 
-            draw_button(screen, "15x15", Config.WIDTH // 2 + 100, 150, 100, 40,
-                        Config.GRAY, Config.DARK_GRAY, lambda: self.logic.apply_grid_size(15))
+    y = 5
+    draw_button(screen, "Restart", 10, y, 110, 30,
+                Config.GREEN, Config.DARK_GREEN,
+                lambda: setattr(state, 'show_restart_modal', True))
 
-            draw_button(screen, "Custom", Config.WIDTH // 2 - 75, 220, 150, 40,
-                        Config.GREEN, Config.DARK_GREEN, self.logic.toggle_custom_input)
+    audio_label = "Audio: On" if state.audio_enabled else "Audio: Off"
+    draw_button(screen, audio_label, Config.WIDTH - 220, y, 120, 30,
+                Config.GRAY, Config.DARK_GRAY,
+                lambda: toggle_audio(state))
 
-            # 🛠 NEW: Smart ship generator toggle
-            smart_label = "Smart Ships: ON" if Config.USE_SMART_SHIP_GENERATOR else "Smart Ships: OFF"
-            draw_button(screen, smart_label, Config.WIDTH // 2 - 100, 300, 200, 40,
-                        Config.GREEN if Config.USE_SMART_SHIP_GENERATOR else Config.GRAY,
-                        Config.DARK_GREEN if Config.USE_SMART_SHIP_GENERATOR else Config.DARK_GRAY,
-                        self.toggle_smart_ship_generator)
-            
-            draw_text_center(screen, "AI Difficulty", Config.WIDTH // 2, 380, 28)
-            for i, level in enumerate(Config.DIFFICULTIES):
-                x = Config.WIDTH // 2 - 150 + i * 150
-                is_selected = (state.difficulty == level)
-                draw_button(
-                    screen, level,
-                    x, 420, 140, 40,
-                    Config.GREEN if is_selected else Config.GRAY,
-                    Config.DARK_GREEN if is_selected else Config.DARK_GRAY,
-                    lambda lvl=level: self.logic.apply_difficulty(lvl)
-                )
+    draw_button(screen, "Close", Config.WIDTH - 100, y, 90, 30,
+                Config.RED, Config.DARK_GRAY,
+                lambda: setattr(state, 'show_quit_modal', True))
 
-        else:
-            draw_text_center(screen, "Enter size (5-20):", Config.WIDTH // 2, 280, 24)
-            draw_text_input_box(screen, self.logic.grid_size_input)
+def toggle_audio(state):
+    state.audio_enabled = not state.audio_enabled
+    pygame.mixer.music.set_volume(1 if state.audio_enabled else 0)
 
-            draw_button(screen, "Back", Config.WIDTH // 2 - 50, 350, 100, 40,
-                        Config.GRAY, Config.DARK_GRAY, self.logic.toggle_custom_input)
+def draw_button(screen, text, x, y, w, h, color, hover_color, action=None):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+    rect = pygame.Rect(x, y, w, h)
+    pygame.draw.rect(screen, hover_color if rect.collidepoint(mouse) else color, rect)
 
-    def toggle_smart_ship_generator(self):
-        Config.USE_SMART_SHIP_GENERATOR = not Config.USE_SMART_SHIP_GENERATOR
-        Config.generate_ships_for_grid()
+    font = pygame.font.SysFont(None, 30)
+    text_surf = font.render(text, True, Config.WHITE)
+    text_rect = text_surf.get_rect(center=rect.center)
+    screen.blit(text_surf, text_rect)
+
+    key = f"{text}-{x}-{y}"
+    if key not in button_states:
+        button_states[key] = False
+
+    if rect.collidepoint(mouse):
+        if click[0] == 1 and not button_states[key]:
+            button_states[key] = True
+            if action:
+                action()
+        elif click[0] == 0:
+            button_states[key] = False
+    else:
+        button_states[key] = False
+
+def _cell_color(cell: Cell, show_ships: bool):
+    if cell == Cell.HIT:
+        return Config.RED
+    elif cell == Cell.MISS:
+        return Config.BLUE
+    elif cell == Cell.SHIP and show_ships:
+        return Config.BLUE
+    return None
+
+def draw_grid(screen, board, offset_x, offset_y, show_ships=False):
+    drawn_ships = set()
+
+    for row in range(Config.GRID_SIZE):
+        for col in range(Config.GRID_SIZE):
+            x = offset_x + col * Config.CELL_SIZE
+            y = offset_y + row * Config.CELL_SIZE
+            rect = pygame.Rect(x, y, Config.CELL_SIZE, Config.CELL_SIZE)
+            pygame.draw.rect(screen, Config.WHITE, rect, 1)
+
+            cell = board[row][col]
+            color = _cell_color(cell, show_ships)
+
+            if color:
+                if cell == Cell.MISS:
+                    pygame.draw.circle(screen, color, rect.center, Config.CELL_SIZE // 6)
+                elif cell == Cell.HIT:
+                    pygame.draw.line(screen, color, rect.topleft, rect.bottomright, 2)
+                    pygame.draw.line(screen, color, rect.topright, rect.bottomleft, 2)
+            elif cell == Cell.SHIP and show_ships:
+                if (row, col) not in drawn_ships:
+                    ship_size = detect_ship_size(board, row, col)
+                    orientation = detect_orientation(board, row, col)
+                    if ship_size and orientation in ship_images[ship_size]:
+                        ship_img = ship_images[ship_size][orientation]
+                        screen.blit(ship_img, (x, y))
+
+                        print(f"🔹 Ship drawn: size={ship_size}, ori={orientation}, at=({row}, {col})")
+
+                        for i in range(ship_size):
+                            if orientation == 'v':
+                                drawn_ships.add((row + i, col))
+                            else:
+                                drawn_ships.add((row, col + i))
+
+def detect_ship_size(board, row, col):
+    if col + 1 < Config.GRID_SIZE and board[row][col+1] == Cell.SHIP:
+        # horizontal
+        size = 1
+        while col + size < Config.GRID_SIZE and board[row][col+size] == Cell.SHIP:
+            size += 1
+        return size
+    else:
+        # vertical
+        size = 1
+        while row + size < Config.GRID_SIZE and board[row+size][col] == Cell.SHIP:
+            size += 1
+        return size
+
+def detect_orientation(board, row, col):
+    if col + 1 < Config.GRID_SIZE and board[row][col+1] == Cell.SHIP:
+        return 'h'
+    return 'v'
+
+def draw_text_center(screen, text, x, y, font_size=30):
+    font = pygame.font.SysFont(None, font_size)
+    surface = font.render(text, True, Config.WHITE)
+    rect = surface.get_rect(center=(x, y))
+    screen.blit(surface, rect)
+
+def draw_modal(screen, title, subtitle, on_yes, on_no):
+    overlay = pygame.Surface((Config.WIDTH, Config.HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 180))
+    screen.blit(overlay, (0, 0))
+
+    box_w, box_h = 400, 180
+    box_rect = pygame.Rect((Config.WIDTH - box_w)//2, (Config.HEIGHT - box_h)//2, box_w, box_h)
+    pygame.draw.rect(screen, Config.DARK_GRAY, box_rect)
+    pygame.draw.rect(screen, Config.WHITE, box_rect, 2)
+
+    draw_text_center(screen, title, box_rect.centerx, box_rect.y + 40, 36)
+    draw_text_center(screen, subtitle, box_rect.centerx, box_rect.y + 80, 24)
+
+    draw_button(screen, "Yes", box_rect.x + 60, box_rect.y + 120, 100, 40, Config.GREEN, Config.DARK_GREEN, on_yes)
+    draw_button(screen, "No", box_rect.right - 160, box_rect.y + 120, 100, 40, Config.RED, Config.DARK_GRAY, on_no)
+
+def draw_text_input_box(screen, user_text):
+    font = pygame.font.SysFont(None, 36)
+    prompt = font.render("Enter your name:", True, Config.WHITE)
+    screen.blit(prompt, (Config.WIDTH // 2 - 150, Config.HEIGHT // 2 - 60))
+    input_box = pygame.Rect(Config.WIDTH // 2 - 150, Config.HEIGHT // 2, 300, 40)
+    pygame.draw.rect(screen, Config.WHITE, input_box, 2)
+    name_surface = font.render(user_text, True, Config.WHITE)
+    screen.blit(name_surface, (input_box.x + 10, input_box.y + 5))

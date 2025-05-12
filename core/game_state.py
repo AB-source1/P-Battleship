@@ -24,27 +24,33 @@ class GameState:
         self.ai_shot_times     = []     # same for AI
         self.winner            = None   # "Player" or "AI"
 
+        self.final_player_board = None  # ✅ Holds placed ships from placement phase
+
         # Kick off first full reset
         self.reset_all()
-        # Main loop flag
         self.running = True
 
-        self.network = None       # will hold our Network instance
-        self.is_host = False      # True if this client is the host
-        self.local_ready    = False   # we’ve finished placement
-        self.remote_ready   = False   # peer has signaled ready
-        self.waiting_for_sync = False # show waiting overlay
-        self.opponent_left  = False   # peer disconnected
+        self.network = None
+        self.is_host = False
+        self.local_ready = False
+        self.remote_ready = False
+        self.waiting_for_sync = False
+        self.opponent_left = False
 
     def reset(self):
         """(Re)create both boards and the player's attack grid."""
-        self.player_board   = create_board()
+        # ✅ Restore board from placement if it exists
+        if self.final_player_board:
+            self.player_board = [row[:] for row in self.final_player_board]
+        else:
+            self.player_board = create_board()
+
         self.computer_board = create_board()
         self.player_attacks = [
             [Cell.EMPTY for _ in range(Config.GRID_SIZE)]
             for _ in range(Config.GRID_SIZE)
         ]
-        # Place the computer’s ships randomly
+
         for size in Config.SHIP_SIZES:
             place_ship_randomly(self.computer_board, size)
 
@@ -55,8 +61,7 @@ class GameState:
     def reset_with_counts(self):
         """Reset boards and initialize ship‐count trackers."""
         self.reset()
-        # Player ships set later by placing logic
-        self.player_ships   = 0
+        self.player_ships   = self.count_ships(self.player_board)
         self.computer_ships = self.count_ships(self.computer_board)
 
     def reset_all(self):

@@ -1,7 +1,7 @@
 # screens/lobby_render.py
 
 import pygame
-from helpers.draw_helpers import draw_text_center, draw_button, draw_text_input_box
+from helpers.draw_helpers import draw_text_center, draw_button
 from core.config import Config
 
 class LobbyRender:

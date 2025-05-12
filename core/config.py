@@ -19,17 +19,24 @@ class Config:
     BOARD_OFFSET_Y        = None
     TOP_BAR_HEIGHT        = 40
 
+    PREVIEW_GREEN = (0, 255, 0, 100)  # semi-transparent green
+    PREVIEW_RED   = (255, 0, 0, 100)  # semi-transparent red
+
     # ─── Colors ───
-    WHITE       = (255, 255, 255)
-    RED         = (255,   0,   0)
-    BLUE        = (  0, 100, 255)
-    GREEN       = (  0, 128,   0)
-    DARK_GREEN  = (  0, 180,   0)
-    GRAY        = ( 70,  70,  70)
-    DARK_GRAY   = (100, 100, 100)
-    BLACK       = (  0,   0,   0)
-    PREVIEW_GREEN = (0, 255, 0, 100)
-    PREVIEW_RED   = (255, 0, 0, 100)
+    SHIP_COLOR = (100, 100, 100)  # for player's ship cells
+    RED        = (255, 0, 0)
+    BLUE       = (0, 0, 255)
+    WHITE      = (255, 255, 255)
+    BLACK      = (0, 0, 0)
+    GRAY       = (150, 150, 150)
+    DARK_GRAY  = (50, 50, 50)
+    GREEN      = (0, 200, 0)
+    DARK_GREEN = (0, 150, 0)
+    RED        = (255, 0, 0)
+    DARK_RED   = (200, 0, 0)
+
+    SHIP_COLOR = (120, 120, 120)  
+
 
     # ─── Optional Smart‐placement Toggle ───
     USE_SMART_SHIP_GENERATOR = False

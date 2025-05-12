@@ -1,5 +1,3 @@
-# screens/placing_render.py
-
 import pygame
 from helpers.draw_helpers import (
     draw_top_bar, draw_grid, draw_text_center, draw_button
@@ -20,10 +18,8 @@ class PlacingRender:
             screen.blit(s, (x, y))
 
     def draw(self, screen, state):
-        # Top bar with Restart/Quit buttons
         draw_top_bar(screen, state)
 
-        # Player’s board with ships
         draw_grid(
             screen,
             state.player_board,
@@ -32,7 +28,9 @@ class PlacingRender:
             show_ships=True
         )
 
-        # “Ships Left” counter
+        for ship in self.logic.placed_ships:
+            ship.draw(screen)
+
         ships_left = len(self.logic.ship_queue) + (1 if self.logic.active_ship else 0)
         draw_text_center(
             screen,
@@ -40,17 +38,15 @@ class PlacingRender:
             Config.WIDTH - 300, 100, 28
         )
 
-        # Live placement preview when dragging
         if self.logic.active_ship and self.logic.active_ship.dragging:
-            # Snap a temporary center to compute preview cells
             mx, my = self.logic.active_ship.image.center
             col = (mx - Config.BOARD_OFFSET_X) // Config.CELL_SIZE
             row = (my - Config.BOARD_OFFSET_Y) // Config.CELL_SIZE
             snapped_center = (
                 Config.BOARD_OFFSET_X + col * Config.CELL_SIZE + Config.CELL_SIZE // 2,
-                Config.BOARD_OFFSET_Y + row * Config.CELL_SIZE + Config.CELL_SIZE // 2
+                Config.BOARD_OFFSET_Y + row * Config.CELL_SIZE + Config.CELL_SIZE // 2 - 25  # lifted upward
             )
-            # Save/restore the ship’s real position
+
             orig_topleft = self.logic.active_ship.image.topleft
             self.logic.active_ship.image.center = snapped_center
 
@@ -61,33 +57,25 @@ class PlacingRender:
 
             if preview_cells:
                 valid = all(
-                    state.player_board[r][c] == Cell.EMPTY
+                    0 <= r < Config.GRID_SIZE and 0 <= c < Config.GRID_SIZE and state.player_board[r][c] == Cell.EMPTY
                     for r, c in preview_cells
                 )
                 self.draw_preview(preview_cells, screen, valid)
 
-        # Draw the draggable “active” ship
         if self.logic.active_ship:
             self.logic.active_ship.draw(screen)
 
-        # Draw the static “next ship” preview
         if self.logic.preview_ship:
             w = Config.CELL_SIZE * self.logic.preview_ship.size
             h = Config.CELL_SIZE
             pos = self.logic.preview_area_position()
             pygame.draw.rect(
                 screen,
-                Config.GRAY,
-                pygame.Rect(pos, (w, h))
-            )
-            pygame.draw.rect(
-                screen,
                 Config.WHITE,
                 pygame.Rect(pos, (w, h)),
                 2
-            )
+    )
 
-        # Rotate and Undo buttons
         draw_button(
             screen, "Rotate Ship (R)",
             Config.WIDTH - 350,
@@ -106,10 +94,9 @@ class PlacingRender:
             self.logic.undo_last_ship
         )
 
-        # ─── Multiplayer “Waiting” Overlay ───────────────────────────
         if state.network and state.waiting_for_sync:
             overlay = pygame.Surface((Config.WIDTH, Config.HEIGHT), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 180))  # 70% opaque black
+            overlay.fill((0, 0, 0, 180))
             screen.blit(overlay, (0, 0))
             draw_text_center(
                 screen,

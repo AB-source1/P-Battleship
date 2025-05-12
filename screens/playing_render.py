@@ -1,50 +1,52 @@
 import pygame
-from helpers.draw_helpers import draw_top_bar, draw_grid, draw_text_center, draw_button
+from helpers.draw_helpers import draw_grid, draw_text_center, draw_top_bar
 from core.config import Config
 
 class PlayingRender:
-    def __init__(self, logic):
-        self.logic = logic
+    def __init__(self, screen, state):
+        self.screen = screen
+        self.state = state
+
+        # Load gameplay-specific background image
+        self.background = pygame.image.load("resources/images/cartoon_battle_bg.png")
+        self.background = pygame.transform.smoothscale(self.background, (Config.WIDTH, Config.HEIGHT))
 
     def draw(self, screen, state):
+        # Draw gameplay-specific background
+        screen.blit(self.background, (0, 0))
+
         draw_top_bar(screen, state)
 
-        if state.player_ships == 0:
-            draw_text_center(screen,
-                            f"{state.player_name or 'You'} lost! Click Restart",
-                            Config.WIDTH // 2, Config.HEIGHT // 2 - 50)
-            draw_button(screen, "Restart",
-                        Config.WIDTH // 2 - 75, Config.HEIGHT // 2,
-                        150, 50, Config.GREEN, Config.DARK_GREEN,
-                        state.reset_all)
+        # Draw the player's board with ships visible
+        draw_text_center(
+            screen,
+            "Your Fleet",
+            Config.BOARD_OFFSET_X + Config.GRID_SIZE * Config.CELL_SIZE // 2,
+            100, 28
+        )
+        draw_grid(
+            screen,
+            state.player_board,
+            Config.BOARD_OFFSET_X,
+            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=True
+        )
 
-        elif state.computer_ships == 0:
-            draw_text_center(screen,
-                            f"{state.player_name or 'You'} won! Click Restart",
-                            Config.WIDTH // 2, Config.HEIGHT // 2 - 50)
-            draw_button(screen, "Restart",
-                        Config.WIDTH // 2 - 75, Config.HEIGHT // 2,
-                        150, 50, Config.GREEN, Config.DARK_GREEN,
-                        state.reset_all)
+        # Draw the enemy board (no ships shown)
+        draw_text_center(
+            screen,
+            "Enemy Waters",
+            Config.ENEMY_OFFSET_X + Config.GRID_SIZE * Config.CELL_SIZE // 2,
+            100, 28
+        )
+        draw_grid(
+            screen,
+            state.player_attacks,
+            Config.ENEMY_OFFSET_X,
+            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=True
+        )
 
-        else:
-            draw_text_center(screen, "Your Fleet",
-                            Config.BOARD_OFFSET_X + Config.GRID_WIDTH // 2,
-                            Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT)
+        # Optional: If you want debug info (hits/shots), add:
+        # self.logic.draw_debug_info()
 
-            draw_text_center(screen, "Enemy Waters",
-                            Config.ENEMY_OFFSET_X + Config.GRID_WIDTH // 2,
-                            Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT)
-
-            draw_grid(screen, state.player_board,
-                      Config.BOARD_OFFSET_X,
-                      Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
-                      show_ships=True)
-
-            draw_grid(screen, state.player_attacks,
-                      Config.ENEMY_OFFSET_X,
-                      Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT)
-
-            draw_text_center(screen,
-                            f"Admiral {state.player_name}",
-                            100, 20 + Config.TOP_BAR_HEIGHT)
