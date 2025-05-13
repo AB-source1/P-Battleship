@@ -8,11 +8,14 @@ class PlayingRender:
     def __init__(self, logic):
         self.logic = logic
 
-    def draw(self, screen, state):
-        draw_top_bar(screen, state)
+def draw(self, screen, state):
+    draw_top_bar(screen, state)
+    font = pygame.font.SysFont(None, 30)
+    score_text = font.render(f"Score: {state.score} | Hits: {state.hits} | Misses: {state.misses}", True, (255, 255, 255))
+    screen.blit(score_text, (10, 10))
 
-        score_str = f"Score: {state.score}"
-        draw_text_center(
+    score_str = f"Score: {state.score}"
+    draw_text_center(
             screen,
             score_str,
             Config.WIDTH  // 2,
@@ -21,10 +24,10 @@ class PlayingRender:
         )
 
 
-        rows = Config.GRID_SIZE
-        cols = Config.GRID_SIZE
-        visited = set()
-        for r in range(rows):
+    rows = Config.GRID_SIZE
+    cols = Config.GRID_SIZE
+    visited = set()
+    for r in range(rows):
             for c in range(cols):
                 # find each unvisited hit cell
                 if state.computer_board[r][c] == Cell.HIT and (r, c) not in visited:
@@ -88,7 +91,7 @@ class PlayingRender:
                     screen.blit(ship.image, (x, y))
 
         # ─── NEW: draw elapsed play-time as MM:SS ───────────────
-        if state.timer_start is not None:
+    if state.timer_start is not None:
             # milliseconds since play began
             elapsed_ms = pygame.time.get_ticks() - state.timer_start
             total_sec = elapsed_ms // 1000
@@ -103,16 +106,15 @@ class PlayingRender:
                 font_size=24
             )
 
-        if state.player_ships == 0:
+    if state.player_ships == 0:
             draw_text_center(screen,
                             f"{state.player_name or 'You'} lost! Click Restart",
                             Config.WIDTH // 2, Config.HEIGHT // 2 - 50)
             draw_button(screen, "Restart",
                         Config.WIDTH // 2 - 75, Config.HEIGHT // 2,
-                        150, 50, Config.GREEN, Config.DARK_GREEN,
-                        state.reset_all)
+                        150, 50, Config.GREEN, Config.DARK_GREEN,state.reset_all)
 
-        elif state.computer_ships == 0:
+    elif state.computer_ships == 0:
             draw_text_center(screen,
                             f"{state.player_name or 'You'} won! Click Restart",
                             Config.WIDTH // 2, Config.HEIGHT // 2 - 50)
@@ -121,7 +123,7 @@ class PlayingRender:
                         150, 50, Config.GREEN, Config.DARK_GREEN,
                         state.reset_all)
 
-        else:
+    else:
             draw_text_center(screen, "Your Fleet",
                             Config.BOARD_OFFSET_X + Config.GRID_WIDTH // 2,
                             Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT)

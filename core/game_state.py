@@ -3,48 +3,22 @@ from core.config import Config
 
 class GameState:
     def __init__(self, reset_callback):
+        self.opponent_left = False
+        self.network = None
         self.reset_callback = reset_callback
-
-        # Persistent UI toggles & flags
-        self.show_restart_modal = False
-        self.show_quit_modal    = False
-        self.audio_enabled      = True  # safe to read in draw_top_bar
-
-        # AI difficulty & memory
-        self.difficulty       = Config.DEFAULT_DIFFICULTY
-        self.ai_targets       = []      # for Medium/Hard hunt modes
-        self.last_player_hit  = None    # last successful AI hit
-
-        # Stats counters & timestamps
-        self.player_shots      = 0
-        self.player_hits       = 0
-        self.ai_shots          = 0
-        self.ai_hits           = 0
-        self.player_shot_times = []     # list of pygame.time.get_ticks()
-        self.ai_shot_times     = []     # same for AI
-        self.winner            = None   # "Player" or "AI"
-
-        self.timer_start = None    # will hold pygame.time.get_ticks() when play begins
-
-                # ─── SCORING STATE ───────────────────────────────────
-        self.score            = 0       # running total
-        self.last_shot_time   = None    # when the player last fired (ms)
-        self.hit_count        = 0       # total hits this round
-
-        # Kick off first full reset
-        self.reset_all()
-        # Main loop flag
+        self.reset_with_counts()
+        self.show_restart_modal = False 
+        self.show_quit_modal = False
+        self.audio_enabled = True
+        self.score = 0
+        self.hits = 0
+        self.misses = 0
         self.running = True
+        self.game_state = "menu"
+        self.ai_turn_pending = False
+        self.ai_turn_start_time = 0
 
-        self.network = None       # will hold our Network instance
-        self.is_host = False      # True if this client is the host
-        self.local_ready    = False   # we’ve finished placement
-        self.remote_ready   = False   # peer has signaled ready
-        self.waiting_for_sync = False # show waiting overlay
-        self.opponent_left  = False   # peer disconnected
 
-        self.history = []       # stack of previous scenes
-        self.skip_push = False
 
     def reset(self):
         """(Re)create both boards and the player's attack grid."""
@@ -111,5 +85,7 @@ class GameState:
 
         # Invoke placement logic callback (e.g. PlacingLogic.reset)
         self.reset_callback()
-
-        
+    def reset_score(self):
+        self.score = 0
+        self.hits = 0
+        self.misses = 0
