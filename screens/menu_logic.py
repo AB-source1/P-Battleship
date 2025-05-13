@@ -10,13 +10,34 @@ class MenuLogic:
         self.state  = state
 
     def start_game(self):
-        self.state.game_state = "placing"
+        """
+        Begin a fresh single‐player (AI) game. This nukes any
+        lingering Pass-&-Play bits so we never render the wrong boards.
+        """
+        # 1) Full reset (boards, flags, score, etc.)
+        self.state.reset_all()
 
+        # 2) Guarantee Pass-&-Play is off
+        self.state.pass_play_mode         = False
+        self.state.pass_play_stage        = 0
+        self.state.pass_play_boards       = [None, None]
+        self.state.pass_play_attacks      = [None, None]
+        self.state.pass_play_placed_ships = [None, None]
+
+        # 3) Enter placement (AI will hook up after)
+        self.state.game_state = "placing"
+        
     def open_settings(self):
         self.state.game_state = "settings"
 
     def go_to_lobby(self):
         """Switch into the multiplayer lobby scene."""
+        # Make sure Pass & Play is off for network games
+        self.state.pass_play_mode         = False
+        self.state.pass_play_stage        = 0
+        self.state.pass_play_boards       = [None, None]
+        self.state.pass_play_attacks      = [None, None]
+        self.state.pass_play_placed_ships = [None, None]
         self.state.game_state = "lobby"
 
     def quit(self):

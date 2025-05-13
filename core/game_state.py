@@ -31,12 +31,12 @@ class GameState:
         self.last_shot_time   = None    # when the player last fired (ms)
         self.hit_count        = 0       # total hits this round
 
-        self.pass_play_mode       = False     # are we in Pass&Play?
-        self.pass_play_stage      = 0         # 0=Player1 placing, 1=handoff, 2=Player2 placing, 3=playing
-        self.current_player       = 0         # 0 or 1
-        self.pass_play_boards     = [None, None]   # each player's ship board
-        self.pass_play_attacks    = [None, None]   # each player's attack grid
-        self.pass_play_placed_ships   = [None, None]
+        # Reset Pass&Play back to off, too
+        self.pass_play_mode         = False
+        self.pass_play_stage        = 0
+        self.pass_play_boards       = [None, None]
+        self.pass_play_attacks      = [None, None]
+        self.pass_play_placed_ships = [None, None]
 
         # Kick off first full reset
         self.reset_all()

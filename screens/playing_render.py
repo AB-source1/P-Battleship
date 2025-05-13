@@ -12,8 +12,9 @@ class PlayingRender:
     def draw(self, screen, state):
         draw_top_bar(screen, state)
 
-        # ─── PASS & PLAY MODE ───────────────────────────────
-        if state.pass_play_mode:
+        # ─── PASS & PLAY: ONLY IN ITS PLAYING STAGE ─────────
+        # we use stage==3 to mean “both players placed, now playing”
+        if state.pass_play_mode and state.pass_play_stage == 3:
             # Top‐center label: whose turn is it
             draw_text_center(
                 screen,
@@ -68,6 +69,8 @@ class PlayingRender:
             return
         # ──────────────────────────────────────────────────────
  
+        # ─── SINGLE-PLAYER / NETWORK FALLBACK ────────────────────
+        # Draw the score & timer
         score_str = f"Score: {state.score}"
         draw_text_center(
             screen,
@@ -77,17 +80,23 @@ class PlayingRender:
             font_size=24
         )
 
-
-        
-        # Your fleet (hidden ships)
+        # 1) Enemy waters: player's attack grid (no ships shown)
         draw_grid(
             screen,
-            state.pass_play_boards[state.current_player],
-            Config.BOARD_OFFSET_X,
+            state.player_attacks,
+            Config.ENEMY_OFFSET_X,
             Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
             show_ships=False
         )
-        return
+
+        # 2) Your fleet: your own board (ships hidden)
+        draw_grid(
+            screen,
+            state.player_board,
+            Config.BOARD_OFFSET_X,
+            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False
+            )
 
         rows = Config.GRID_SIZE
         cols = Config.GRID_SIZE
