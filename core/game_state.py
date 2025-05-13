@@ -129,6 +129,11 @@ class GameState:
         self.pass_play_attacks        = [None, None]
         self.pass_play_placed_ships   = [None, None]
 
+        self.pass_play_shots      = [0, 0]
+        self.pass_play_score           = [0, 0]
+        self.pass_play_last_shot_time  = [0, 0]
+        self.pass_play_shot_times = [[], []]
+
         # Invoke placement logic callback (e.g. PlacingLogic.reset)
         self.reset_callback()
 

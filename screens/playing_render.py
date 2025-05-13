@@ -42,6 +42,27 @@ class PlayingRender:
                 show_ships=False
             )
 
+                        # ─── Simplified: “Player 1” / “Player 2” + single Score ────
+            label_y    = Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT
+            center_x1  = Config.BOARD_OFFSET_X + Config.GRID_WIDTH // 2
+            center_x2  = Config.ENEMY_OFFSET_X + Config.GRID_WIDTH // 2
+
+                        # Player 1 & 2 **together** with their Pass-&-Play score
+            draw_text_center(
+                screen,
+                f"Player 1   Score: {state.pass_play_score[0]}",
+                center_x1,
+                label_y,
+                font_size=28
+            )
+            draw_text_center(
+                screen,
+                f"Player 2   Score: {state.pass_play_score[1]}",
+                center_x2,
+                label_y,
+                font_size=28
+            )
+
              # ─── Reveal sunk ships by iterating the original placements ───
             for idx, (ships_coords, offset_x) in enumerate([
                 (state.pass_play_placed_ships[0], Config.BOARD_OFFSET_X),
