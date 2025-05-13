@@ -3,6 +3,8 @@ from core.config import Config
 
 class GameState:
     def __init__(self, reset_callback):
+        self.opponent_left = False
+        self.network = None
         self.reset_callback = reset_callback
         self.reset_with_counts()
         self.show_restart_modal = False 

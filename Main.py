@@ -8,7 +8,6 @@ from screens.menu_logic     import MenuLogic
 from screens.menu_render    import MenuRender
 from screens.settings_logic import SettingsLogic
 from screens.settings_render import SettingsRender
-from screens.lobby_logic    import LobbyLogic
 from screens.lobby_render   import LobbyRender
 from screens.placing_logic  import PlacingLogic
 from screens.placing_render import PlacingRender
@@ -17,15 +16,21 @@ from screens.playing_render import PlayingRender
 from screens.stats_logic    import StatsLogic
 from screens.stats_render   import StatsRender
 from helpers.draw_helpers   import draw_modal
+from screens.lobby_logic    import LobbyLogic
+
 
 # ─── Pygame Initialization ───────────────────────────────────────────────────
 pygame.init()
+pygame.mixer.init()
+pygame.mixer.music.load("resources/images/music/battleshipmusic.mp3")
+pygame.mixer.music.set_volume(0.5)  # Optional: volume 0.0 to 1.0
+pygame.mixer.music.play(-1)  # -1 means loop forever
 screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT),pygame.RESIZABLE)
 pygame.display.set_caption("P-Battleship")
 # ─── Load both menu & battle backgrounds ────────────────────────────────────
 bg_menu_img   = pygame.image.load("resources/images/cartoon_loading.png").convert()
 battle_bg_img = pygame.image.load("resources/images/cartoon_battle_bg.png").convert()
-
+state = GameState(lambda: None)
 # initial scale
 menu_background   = pygame.transform.smoothscale(bg_menu_img,   (Config.WIDTH, Config.HEIGHT))
 battle_background = pygame.transform.smoothscale(battle_bg_img, (Config.WIDTH, Config.HEIGHT))
@@ -46,8 +51,9 @@ menu_render     = MenuRender(menu_logic)
 settings_logic  = SettingsLogic(screen, state)
 settings_render = SettingsRender(settings_logic)
 
-lobby_logic     = LobbyLogic(screen, state)
-lobby_render    = LobbyRender(lobby_logic)
+# from screens.lobby_logic import LobbyLogic
+lobby_logic = LobbyLogic(screen, state)
+lobby_render = LobbyRender(lobby_logic)
 
 playing_logic   = PlayingLogic(screen, state)
 playing_render  = PlayingRender(playing_logic)
@@ -65,6 +71,7 @@ def restart_game():
     state.network   = None
     state.is_host   = False
     # reset lobby UI fields
+    lobby_logic = LobbyLogic()
     lobby_logic.mode        = None
     lobby_logic.waiting     = False
     lobby_logic.ip_input    = ""
@@ -141,6 +148,7 @@ while state.running:
         if   state.game_state == "menu":
             menu_logic.handle_event(event, state)
         elif state.game_state == "lobby":
+            lobby_logic = LobbyLogic()
             lobby_logic.handle_event(event)
         elif state.game_state == "settings":
             settings_logic.handle_event(event)

@@ -1,11 +1,10 @@
+from typing import Optional, Dict
 # network.py
-
 import socket
 import threading
 import errno
 import json
 from queue import Queue
-
 class Network:
     """
     Simple peer-to-peer TCP-based JSON messaging.
@@ -107,7 +106,8 @@ class Network:
         except (BrokenPipeError, OSError):
             self.queue.put({"type": "disconnect"})
 
-    def recv(self) -> dict | None:
+    from typing import Optional, Dict
+    def rcv(self) -> Optional[Dict]:
         """
         Non-blocking receive: returns the next queued message dict,
         or None if no message is waiting.
