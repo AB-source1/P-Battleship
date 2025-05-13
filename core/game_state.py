@@ -36,6 +36,7 @@ class GameState:
         self.current_player       = 0         # 0 or 1
         self.pass_play_boards     = [None, None]   # each player's ship board
         self.pass_play_attacks    = [None, None]   # each player's attack grid
+        self.pass_play_placed_ships   = [None, None]
 
         # Kick off first full reset
         self.reset_all()
@@ -123,6 +124,10 @@ class GameState:
         self.game_state         = "menu"
         self.show_restart_modal = False
         self.show_quit_modal    = False
+
+        self.pass_play_boards         = [None, None]
+        self.pass_play_attacks        = [None, None]
+        self.pass_play_placed_ships   = [None, None]
 
         # Invoke placement logic callback (e.g. PlacingLogic.reset)
         self.reset_callback()

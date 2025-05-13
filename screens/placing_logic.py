@@ -18,6 +18,7 @@ class PlacingLogic:
         self.setup_ships()
         self.grid_offset_x = Config.BOARD_OFFSET_X + 34
         self.grid_offset_y = Config.BOARD_OFFSET_Y + 31
+        self.pass_play_placed_ships = [None, None]
 
 
     def setup_ships(self):
@@ -150,9 +151,11 @@ class PlacingLogic:
                                 # Stage 0: Player 1 finished placing
                                 if state.pass_play_stage == 0:
                                     # snapshot P1’s board
-                                    state.pass_play_boards[0] = [
-                                        row[:] for row in state.player_board
-                                    ]
+                                    state.pass_play_boards[0]       = [row[:] for row in state.player_board]
+                                    # capture exactly which ships & where
+                                    state.pass_play_placed_ships[0] = [
+                                        ship.coords[:] for ship in self.placed_ships
+                                    ]   
                                     state.pass_play_stage = 1
                                     state.show_pass_modal = True
                                     return
@@ -160,8 +163,10 @@ class PlacingLogic:
                                 # Stage 2: Player 2 finished placing
                                 if state.pass_play_stage == 2:
                                     # snapshot P2’s board
-                                    state.pass_play_boards[1] = [
-                                        row[:] for row in state.player_board
+                                    state.pass_play_boards[1]       = [row[:] for row in state.player_board]
+                                    # capture P2’s ships too
+                                    state.pass_play_placed_ships[1] = [
+                                        ship.coords[:] for ship in self.placed_ships
                                     ]
                                     state.pass_play_stage  = 3
                                     # prime for playing as Player 1’s turn
