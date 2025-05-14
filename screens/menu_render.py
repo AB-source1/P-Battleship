@@ -1,42 +1,59 @@
 # screens/menu_render.py
 
-import pygame
-from helpers.draw_helpers import draw_text_center, draw_button
+import tkinter as tk
 from core.config import Config
+
 
 class MenuRender:
     def __init__(self, logic):
         self.logic = logic
+        self.window = None
 
     def draw(self, screen, state):
-        
-       
+        if self.window is not None:
+            return  # Prevent reopening
 
-        # Single-player Play
-        draw_button(screen, "Play",
-                    100, 200, 200, 50,
-                    Config.GREEN, Config.DARK_GREEN,
-                    self.logic.start_game)
+        self.window = tk.Tk()
+        self.window.title("P-Battleship")
+        self.window.geometry(f"{Config.WIDTH}x{Config.HEIGHT}")
+        self.window.configure(bg="#0077B6")
 
-        # Settings
-        draw_button(screen, "Settings",
-                    100, 270, 200, 50,
-                    Config.GRAY, Config.DARK_GRAY,
-                    self.logic.open_settings)
+        title = tk.Label(
+            self.window,
+            text="BATTLESHIPS",
+            font=("Helvetica", 36, "bold"),
+            fg="orange",
+            bg="#0077B6"
+        )
+        title.pack(pady=60)
 
-        # Multiplayer (new)
-        draw_button(screen, "Multiplayer",
-                    100, 340, 200, 50,
-                    Config.BLUE, Config.DARK_GRAY,
-                    self.logic.go_to_lobby)
-         # Pass & Play (local 2-player)
-        draw_button(screen, "Pass and Play",
-                    100, 410, 200, 50,
-                    Config.GREEN, Config.DARK_GREEN,
-                    self.logic.start_pass_and_play)
+        button_style = {
+            "width": 20,
+            "height": 2,
+            "font": ("Helvetica", 14, "bold"),
+            "bg": "#FFCC00",
+            "fg": "white",
+            "activebackground": "#C89600",
+            "relief": "raised",
+            "bd": 3
+        }
 
-        # Quit
-        draw_button(screen, "Quit",
-                    100, 480, 200, 50,
-                    Config.RED, Config.RED,
-                    self.logic.quit)
+        def wrap_and_close(func):
+            def wrapper():
+                self.window.destroy()
+                self.window = None
+                func()
+            return wrapper
+
+        buttons = [
+            ("Play", wrap_and_close(self.logic.start_game)),
+            ("Settings", wrap_and_close(self.logic.open_settings)),
+            ("Multiplayer", wrap_and_close(self.logic.go_to_lobby)),
+            ("Quit", self.logic.quit)
+        ]
+
+        for text, command in buttons:
+            tk.Button(self.window, text=text, command=command, **button_style).pack(pady=10)
+
+        self.window.mainloop()
+
