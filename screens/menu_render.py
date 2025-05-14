@@ -16,27 +16,34 @@ class MenuRender:
         draw_button(screen, "Play",
                     100, 200, 200, 50,
                     Config.GREEN, Config.DARK_GREEN,
-                    self.logic.start_game)
+                    self.logic.start_game,
+                    3)
 
         # Settings
         draw_button(screen, "Settings",
                     100, 270, 200, 50,
                     Config.GRAY, Config.DARK_GRAY,
-                    self.logic.open_settings)
+                    self.logic.open_settings,
+                    3)
 
         # Multiplayer (new)
         draw_button(screen, "Multiplayer",
                     100, 340, 200, 50,
                     Config.BLUE, Config.DARK_GRAY,
-                    self.logic.go_to_lobby)
+                    self.logic.go_to_lobby,
+                    3)
          # Pass & Play (local 2-player)
         draw_button(screen, "Pass and Play",
                     100, 410, 200, 50,
                     Config.GREEN, Config.DARK_GREEN,
-                    self.logic.start_pass_and_play)
+                    self.logic.start_pass_and_play,
+                    3
+                    )
 
         # Quit
         draw_button(screen, "Quit",
                     100, 480, 200, 50,
                     Config.RED, Config.RED,
-                    self.logic.quit)
+                    self.logic.quit,
+                    3
+                    )

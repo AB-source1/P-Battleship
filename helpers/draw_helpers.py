@@ -41,11 +41,13 @@ def toggle_audio(state):
     state.audio_enabled = not state.audio_enabled
     pygame.mixer.music.set_volume(1 if state.audio_enabled else 0)
 
-def draw_button(screen, text, x, y, w, h, color, hover_color, action=None):
+def draw_button(screen, text, x, y, w, h, color, hover_color, action=None,border=0):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
     rect = pygame.Rect(x, y, w, h)
     pygame.draw.rect(screen, hover_color if rect.collidepoint(mouse) else color, rect)
+    if border>0:
+        pygame.draw.rect(screen, Config.BLACK, rect, border)
 
     font = pygame.font.SysFont(None, 30)
     text_surf = font.render(text, True, Config.WHITE)
