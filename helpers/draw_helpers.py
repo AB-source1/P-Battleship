@@ -41,11 +41,13 @@ def toggle_audio(state):
     state.audio_enabled = not state.audio_enabled
     pygame.mixer.music.set_volume(1 if state.audio_enabled else 0)
 
-def draw_button(screen, text, x, y, w, h, color, hover_color, action=None):
+def draw_button(screen, text, x, y, w, h, color, hover_color, action=None,border=0):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
     rect = pygame.Rect(x, y, w, h)
     pygame.draw.rect(screen, hover_color if rect.collidepoint(mouse) else color, rect)
+    if border>0:
+        pygame.draw.rect(screen, Config.BLACK, rect, border)
 
     font = pygame.font.SysFont(None, 30)
     text_surf = font.render(text, True, Config.WHITE)
@@ -59,10 +61,12 @@ def draw_button(screen, text, x, y, w, h, color, hover_color, action=None):
     if rect.collidepoint(mouse):
         if click[0] == 1 and not button_states[key]:
             button_states[key] = True
-            if action:
-                action()
+        
         elif click[0] == 0:
-            button_states[key] = False
+            if button_states.get(key, False):
+                button_states[key] = False
+                if action:
+                    action()
     else:
         button_states[key] = False
 
@@ -94,9 +98,9 @@ def draw_grid(screen, board, offset_x, offset_y, show_ships=False):
                 else:
                     pygame.draw.rect(screen, color, rect.inflate(-4, -4))
 
-def draw_text_center(screen, text, x, y, font_size=30):
+def draw_text_center(screen, text, x, y, font_size=30,bg_color=None):
     font = pygame.font.SysFont(None, font_size)
-    surface = font.render(text, True, Config.WHITE)
+    surface = font.render(text, True, Config.WHITE,bg_color)
     rect = surface.get_rect(center=(x, y))
     screen.blit(surface, rect)
 
@@ -113,8 +117,8 @@ def draw_modal(screen, title, subtitle, on_yes, on_no):
     draw_text_center(screen, title, box_rect.centerx, box_rect.y + 40, 36)
     draw_text_center(screen, subtitle, box_rect.centerx, box_rect.y + 80, 24)
 
-    draw_button(screen, "Yes", box_rect.x + 60, box_rect.y + 120, 100, 40, Config.GREEN, Config.DARK_GREEN, on_yes)
-    draw_button(screen, "No", box_rect.right - 160, box_rect.y + 120, 100, 40, Config.RED, Config.DARK_GRAY, on_no)
+    draw_button(screen, "Yes", box_rect.x + 60, box_rect.y + 120, 100, 40, Config.GREEN, Config.DARK_GREEN, on_yes,3)
+    draw_button(screen, "No", box_rect.right - 160, box_rect.y + 120, 100, 40, Config.RED, Config.DARK_GRAY, on_no,3)
 
 def draw_text_input_box(screen, user_text):
     font = pygame.font.SysFont(None, 36)

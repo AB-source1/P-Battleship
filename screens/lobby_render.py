@@ -26,11 +26,11 @@ class LobbyRender:
                     100, 200, 160, 50,
                     Config.GREEN, Config.DARK_GREEN,
                     lambda: (setattr(self.logic, "mode", "host"),
-                             self.logic.start_host()))
+                             self.logic.start_host()),3)
         draw_button(screen, "Join Game",
                     100, 300, 160, 50,
                     Config.BLUE, Config.DARK_GRAY,
-                    lambda: setattr(self.logic, "mode", "join"))
+                    lambda: setattr(self.logic, "mode", "join"),3)
 
         # If we have a bound socket, show our own address:port
         if self.logic.host_ip_str:
@@ -51,4 +51,4 @@ class LobbyRender:
             draw_button(screen, "Connect",
                         Config.WIDTH//2 - 80, 380, 160, 40,
                         Config.GREEN, Config.DARK_GREEN,
-                        self.logic.start_join)
+                        self.logic.start_join,3)

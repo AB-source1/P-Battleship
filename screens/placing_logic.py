@@ -228,11 +228,11 @@ class PlacingLogic:
             if self.active_ship:
                 self.ship_queue.insert(0, self.active_ship)
             self.active_ship = last_ship
-            self.active_ship.image.topleft = self.main_area_position()
+            self.active_ship.rect.topleft = self.main_area_position()
 
             if self.ship_queue:
                 self.preview_ship = self.ship_queue[0]
-                self.preview_ship.image.topleft = self.preview_area_position()
+                self.preview_ship.rect.topleft = self.preview_area_position()
             else:
                 self.preview_ship = None  
 

@@ -58,6 +58,11 @@ class GameState:
         self.history = []       # stack of previous scenes
         self.skip_push = False
 
+
+        #explostion
+        self.explosions             = []
+        self.miss_splashes  = []
+
     def reset(self):
         """(Re)create both boards and the player's attack grid."""
         self.player_board   = create_board()
@@ -147,5 +152,9 @@ class GameState:
 
         # Invoke placement logic callback (e.g. PlacingLogic.reset)
         self.reset_callback()
+
+        # clear explosion history
+        self.explosions             = []
+        self.miss_splashes  = []
 
         
