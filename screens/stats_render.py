@@ -10,22 +10,30 @@ class StatsRender:
         # Draw the top bar (title, restart/quit buttons)
         draw_top_bar(screen, state)
 
-        # Winner message
-        if state.winner == "Player":
-            msg = "You won!"
-        else:
-            msg = "You lost!"
-        draw_text_center(screen, msg, Config.WIDTH // 2, 120, 48)
-        draw_text_center(screen, msg, Config.WIDTH // 2, 120, 48)
+        # ─── PASS & PLAY vs AI/Network split ────────────────────
+        if state.pass_play_mode:
+            # We just finished a local 2-player game
+            title_y = 120
+            draw_text_center(screen, "Pass & Play Results", Config.WIDTH // 2, title_y, 48)
 
-        # ─── NEW: show the final score ─────────────────────────
-        draw_text_center(
-            screen,
-            f"Final Score: {state.score}",
-            Config.WIDTH // 2,
-            180,         # just below the win/lose banner
-            32           # a slightly smaller font than the title
-        )
+            # Skip the single‐player banner and final‐score
+        else:
+            # Existing Winner/Score banner for AI/online
+            if state.winner == "Player":
+                msg = "You won!"
+            else:
+                msg = "You lost!"
+            draw_text_center(screen, msg, Config.WIDTH // 2, 120, 48)
+            draw_text_center(screen, msg, Config.WIDTH // 2, 120, 48)
+
+            draw_text_center(
+                screen,
+                f"Final Score: {state.score}",
+                Config.WIDTH // 2,
+                180,
+                32
+            )
+ 
 
         # Compute stats summary dictionaries
         def compute_stats(shots, hits, times):
@@ -44,16 +52,30 @@ class StatsRender:
                 "Total": f"{total_ms/1000:.2f}s"
             }
 
-        p_stats = compute_stats(
-            state.player_shots,
-            state.player_hits,
-            state.player_shot_times
-        )
-        o_stats = compute_stats(
-            state.ai_shots,
-            state.ai_hits,
-            state.ai_shot_times
-        )
+        if state.pass_play_mode:
+            # Per-player stats from pass_play arrays
+            p_stats = compute_stats(
+                state.pass_play_shots[0],
+                state.pass_play_hits[0],
+                state.pass_play_shot_times[0]
+            )
+            o_stats = compute_stats(
+                state.pass_play_shots[1],
+                state.pass_play_hits[1],
+                state.pass_play_shot_times[1]
+            )
+        else:
+            # AI / network stats as before
+            p_stats = compute_stats(
+                state.player_shots,
+                state.player_hits,
+                state.player_shot_times
+            )
+            o_stats = compute_stats(
+                state.ai_shots,
+                state.ai_hits,
+                state.ai_shot_times
+            )
 
         # Layout: two columns
         left_x = Config.WIDTH // 4
@@ -61,12 +83,16 @@ class StatsRender:
         start_y = 200
         line_h = 40
 
-        # Column headers adapt for multiplayer
-        if state.network:
-            left_label = "You"
+        # Column headers: always “Player 1” / “Player 2” in Pass&Play,
+        # else the usual You/Computer or You/Opponent
+        if state.pass_play_mode:
+            left_label  = "Player 1"
+            right_label = "Player 2"
+        elif state.network:
+            left_label  = "You"
             right_label = "Opponent"
         else:
-            left_label = "Player"
+            left_label  = "Player"
             right_label = "Computer"
 
         draw_text_center(screen, left_label, left_x, start_y, 36)

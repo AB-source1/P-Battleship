@@ -1,8 +1,9 @@
 import pygame
 from helpers.draw_helpers import draw_top_bar, draw_grid, draw_text_center, draw_button, draw_x
 from core.config import Config
-from game.draggable_ship import DraggableShip
+from game.draggable_ship import DraggableShip, SHIP_IMAGE_FILES
 from game.board_helpers import Cell
+
 
 class PlayingRender:
     def __init__(self, logic):
@@ -11,6 +12,86 @@ class PlayingRender:
     def draw(self, screen, state):
         draw_top_bar(screen, state)
 
+        # ─── PASS & PLAY: ONLY IN ITS PLAYING STAGE ─────────
+        # we use stage==3 to mean “both players placed, now playing”
+        if state.pass_play_mode and state.pass_play_stage == 3:
+            # Top‐center label: whose turn is it
+            draw_text_center(
+                screen,
+                f"Player {state.current_player+1}'s Turn",
+                Config.WIDTH // 2,
+                Config.TOP_BAR_HEIGHT + 50
+            )
+
+            # --- LEFT: Player 1’s board (ships hidden) ---
+            draw_grid(
+                screen,
+                state.pass_play_boards[0],
+                Config.BOARD_OFFSET_X,
+                Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+                show_ships=False
+            )
+
+            # --- RIGHT: Player 2’s board (ships hidden) ---
+            # --- RIGHT: Player 2’s board (ships hidden) ---
+            draw_grid(
+                screen,
+                state.pass_play_boards[1],
+                Config.ENEMY_OFFSET_X,
+                Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+                show_ships=False
+            )
+
+                        # ─── Simplified: “Player 1” / “Player 2” + single Score ────
+            label_y    = Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT
+            center_x1  = Config.BOARD_OFFSET_X + Config.GRID_WIDTH // 2
+            center_x2  = Config.ENEMY_OFFSET_X + Config.GRID_WIDTH // 2
+
+                        # Player 1 & 2 **together** with their Pass-&-Play score
+            draw_text_center(
+                screen,
+                f"Player 1   Score: {state.pass_play_score[0]}",
+                center_x1,
+                label_y,
+                font_size=28
+            )
+            draw_text_center(
+                screen,
+                f"Player 2   Score: {state.pass_play_score[1]}",
+                center_x2,
+                label_y,
+                font_size=28
+            )
+
+             # ─── Reveal sunk ships by iterating the original placements ───
+            for idx, (ships_coords, offset_x) in enumerate([
+                (state.pass_play_placed_ships[0], Config.BOARD_OFFSET_X),
+                (state.pass_play_placed_ships[1], Config.ENEMY_OFFSET_X),
+            ]):
+                board = state.pass_play_boards[idx]
+                for coords in ships_coords:
+                    # If every cell of that ship was hit, it's sunk
+                    if all(board[r][c] == Cell.HIT for r, c in coords):
+                        size = len(coords)
+                        rows = [r for r, _ in coords]
+                        cols = [c for _, c in coords]
+                        horiz = len(set(rows)) == 1
+                        min_r, min_c = min(rows), min(cols)
+
+                        # Create a throw-away DraggableShip just for its image
+                        ship = DraggableShip(size, 0, 0)
+                        if not horiz:
+                            ship.rotate()
+
+                        x = offset_x + min_c * Config.CELL_SIZE
+                        y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + min_r * Config.CELL_SIZE
+                        screen.blit(ship.image, (x, y))
+            # quit here so none of your old single-/multi-player draws run
+            return
+        # ──────────────────────────────────────────────────────
+ 
+        # ─── SINGLE-PLAYER / NETWORK FALLBACK ────────────────────
+        # Draw the score & timer
         score_str = f"Score: {state.score}"
         draw_text_center(
             screen,
@@ -20,6 +101,23 @@ class PlayingRender:
             font_size=24
         )
 
+        # 1) Enemy waters: player's attack grid (no ships shown)
+        draw_grid(
+            screen,
+            state.player_attacks,
+            Config.ENEMY_OFFSET_X,
+            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False
+        )
+
+        # 2) Your fleet: your own board (ships hidden)
+        draw_grid(
+            screen,
+            state.player_board,
+            Config.BOARD_OFFSET_X,
+            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False
+            )
 
         rows = Config.GRID_SIZE
         cols = Config.GRID_SIZE
@@ -45,7 +143,7 @@ class PlayingRender:
 
                     size = len(cluster)
                     # only reveal real ships (we have art for sizes 3,4,5)
-                    from game.draggable_ship import SHIP_IMAGE_FILES
+
                     if size not in SHIP_IMAGE_FILES:
                         continue
                     # determine orientation

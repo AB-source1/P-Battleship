@@ -18,6 +18,7 @@ class PlacingLogic:
         self.setup_ships()
         self.grid_offset_x = Config.BOARD_OFFSET_X + 34
         self.grid_offset_y = Config.BOARD_OFFSET_Y + 31
+        self.pass_play_placed_ships = [None, None]
 
 
     def setup_ships(self):
@@ -145,23 +146,54 @@ class PlacingLogic:
 
                         # All ships placed?
                         if not self.active_ship and not self.preview_ship:
-                            # Single-player: go straight to playing
+                            # ——— PASS & PLAY MODE —————————————
+                            if state.pass_play_mode:
+                                # Stage 0: Player 1 finished placing
+                                if state.pass_play_stage == 0:
+                                    # snapshot P1’s board
+                                    state.pass_play_boards[0]       = [row[:] for row in state.player_board]
+                                    # capture exactly which ships & where
+                                    state.pass_play_placed_ships[0] = [
+                                        ship.coords[:] for ship in self.placed_ships
+                                    ]   
+                                    state.pass_play_stage = 1
+                                    state.show_pass_modal = True
+                                    return
+
+                                # Stage 2: Player 2 finished placing
+                                if state.pass_play_stage == 2:
+                                    # snapshot P2’s board
+                                    state.pass_play_boards[1]       = [row[:] for row in state.player_board]
+                                    # capture P2’s ships too
+                                    state.pass_play_placed_ships[1] = [
+                                        ship.coords[:] for ship in self.placed_ships
+                                    ]
+                                    state.pass_play_stage  = 3
+                                    # prime for playing as Player 1’s turn
+                                    state.current_player   = 0
+                                    state.player_board     = state.pass_play_boards[0]
+                                    state.player_attacks   = state.pass_play_attacks[0]
+                                    state.player_ships     = state.count_ships(
+                                        state.player_board
+                                    )
+                                    state.game_state       = "playing"
+                                    return
+
+                            # ——— EXISTING SINGLE-/MULTI-PLAYER FALL-BACK ———
                             if not state.network:
                                 state.player_ships  = state.count_ships(state.player_board)
-                                # save the sprite objects for the playing screen
                                 state.placed_ships  = self.placed_ships.copy()
                                 state.game_state    = "playing"
-                            # Multiplayer: send handshake and wait
                             else:
                                 state.network.send({"type":"placement_done"})
                                 state.local_ready      = True
                                 state.waiting_for_sync = True
-                                # also persist sprites for when multiplayer actually starts
-                                state.placed_ships    = self.placed_ships.copy()
+                                state.placed_ships     = self.placed_ships.copy()
                     else:
                         self.snap_back()
                 else:
                     self.snap_back()
+         
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_r and self.active_ship:

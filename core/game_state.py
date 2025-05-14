@@ -31,6 +31,18 @@ class GameState:
         self.last_shot_time   = None    # when the player last fired (ms)
         self.hit_count        = 0       # total hits this round
 
+        # Reset Pass&Play back to off, too
+        self.pass_play_mode         = False
+        self.pass_play_stage        = 0
+        self.pass_play_boards       = [None, None]
+        self.pass_play_attacks      = [None, None]
+        self.pass_play_placed_ships = [None, None]
+
+        # per-player Pass&Play stats
+        self.pass_play_shots         = [0, 0]
+        self.pass_play_hits          = [0, 0]
+        self.pass_play_shot_times    = [[], []]
+
         # Kick off first full reset
         self.reset_all()
         # Main loop flag
@@ -57,6 +69,15 @@ class GameState:
         # Place the computer’s ships randomly
         for size in Config.SHIP_SIZES:
             place_ship_randomly(self.computer_board, size)
+
+        self.pass_play_mode    = False
+        self.pass_play_stage   = 0
+        self.current_player    = 0
+        self.pass_play_boards  = [None, None]
+        self.pass_play_attacks = [None, None]
+
+        # … invoke placement callback …
+        self.reset_callback()
 
     def count_ships(self, board):
         """Return number of SHIP cells remaining on `board`."""
@@ -108,6 +129,21 @@ class GameState:
         self.game_state         = "menu"
         self.show_restart_modal = False
         self.show_quit_modal    = False
+
+        self.pass_play_boards         = [None, None]
+        self.pass_play_attacks        = [None, None]
+        self.pass_play_placed_ships   = [None, None]
+
+        # clear per-player stats
+        self.pass_play_shots         = [0, 0]
+        self.pass_play_hits          = [0, 0]
+        self.pass_play_shot_times    = [[], []]
+
+
+        self.pass_play_shots      = [0, 0]
+        self.pass_play_score           = [0, 0]
+        self.pass_play_last_shot_time  = [0, 0]
+        self.pass_play_shot_times = [[], []]
 
         # Invoke placement logic callback (e.g. PlacingLogic.reset)
         self.reset_callback()

@@ -43,6 +43,69 @@ class PlayingLogic:
         - In multiplayer, queue a pending shot when it's our turn.
         - In single-player, resolve a shot against the AI and update score.
         """
+            # only in Pass&Play, local two‐player mode:
+        if state.pass_play_mode:
+            if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+                return
+            # whose turn?
+            p = state.current_player
+            row, col = get_grid_pos(
+                event.pos,
+                Config.ENEMY_OFFSET_X if p==0 else Config.BOARD_OFFSET_X,
+                Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT
+            )
+            if row is None: return
+            attacks = state.pass_play_attacks[p]
+            board   = state.pass_play_boards[1-p]
+            if attacks[row][col] != Cell.EMPTY: return
+
+            hit, ship = fire_at(row, col, board)
+
+            # 2) Mark where the player has shot
+            attacks[row][col] = Cell.HIT if hit else Cell.MISS
+
+            # 3) Record hit‐count if you still want it
+            state.pass_play_shots[p] += 1
+ 
+
+            # 4) Compute time‐based bonus/penalty
+            now     = pygame.time.get_ticks()
+            last    = state.pass_play_last_shot_time[p]
+            elapsed = now - last if last else 0
+            state.pass_play_last_shot_time[p] = now
+
+            # 5) Base points or miss penalty
+            points = Config.BASE_HIT_POINTS if hit else -Config.MISS_PENALTY
+
+            if hit:
+                # 6) Time bonus (capped by your MAX_SHOT_TIME_MS)
+                bonus_ms   = max(0, Config.MAX_SHOT_TIME_MS - elapsed)
+                time_bonus = (bonus_ms // 1000) * Config.TIME_BONUS_FACTOR
+                points    += time_bonus
+
+                # 7) Sunk‐ship bonus (flat + per‐cell)
+                if ship and getattr(ship, "is_sunk", lambda: False)():
+                    points += Config.SHIP_SUNK_BONUS
+                    points += getattr(ship, "length", 0) * Config.SHIP_LENGTH_BONUS
+
+            # 8) Apply to this player’s Pass-&-Play score
+            state.pass_play_score[p] += points
+
+            # (Optional) track raw hits:
+            # if hit:
+            #     state.pass_play_hits[p] += 1
+            # check victory
+            if state.count_ships(board)==0:
+                state.winner    = f"Player {p+1}"
+                state.game_state = "stats"
+                return
+            # flip turn
+            state.current_player = 1 - p
+            # switch what you draw next
+            state.player_attacks = state.pass_play_attacks[state.current_player]
+            state.player_board   = state.pass_play_boards[1 - state.current_player]
+            return
+
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return
 

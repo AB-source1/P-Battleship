@@ -2,6 +2,7 @@
 
 import pygame
 from core.game_state import GameState
+from game.board_helpers import create_board
 
 class MenuLogic:
     def __init__(self, screen, state: GameState):
@@ -9,13 +10,34 @@ class MenuLogic:
         self.state  = state
 
     def start_game(self):
-        self.state.game_state = "placing"
+        """
+        Begin a fresh single‐player (AI) game. This nukes any
+        lingering Pass-&-Play bits so we never render the wrong boards.
+        """
+        # 1) Full reset (boards, flags, score, etc.)
+        self.state.reset_all()
 
+        # 2) Guarantee Pass-&-Play is off
+        self.state.pass_play_mode         = False
+        self.state.pass_play_stage        = 0
+        self.state.pass_play_boards       = [None, None]
+        self.state.pass_play_attacks      = [None, None]
+        self.state.pass_play_placed_ships = [None, None]
+
+        # 3) Enter placement (AI will hook up after)
+        self.state.game_state = "placing"
+        
     def open_settings(self):
         self.state.game_state = "settings"
 
     def go_to_lobby(self):
         """Switch into the multiplayer lobby scene."""
+        # Make sure Pass & Play is off for network games
+        self.state.pass_play_mode         = False
+        self.state.pass_play_stage        = 0
+        self.state.pass_play_boards       = [None, None]
+        self.state.pass_play_attacks      = [None, None]
+        self.state.pass_play_placed_ships = [None, None]
         self.state.game_state = "lobby"
 
     def quit(self):
@@ -37,6 +59,32 @@ class MenuLogic:
             if 100 < x < 300 and 340 < y < 390:
                 self.go_to_lobby()
 
-            # Quit button
+             # Pass and Play button
             if 100 < x < 300 and 410 < y < 460:
+                self.start_pass_and_play()
+
+            # Quit button
+            if 100 < x < 300 and 480 < y < 530:
                 self.quit()
+
+    def start_pass_and_play(self):
+        """
+        Kick off a local two-player Pass & Play game:
+         - flip on pass_play_mode
+         - zero out the placement stage
+         - allocate two empty boards (ships + attacks)
+         - jump into the placing phase
+        """
+        # 1) Turn on pass & play
+        self.state.pass_play_mode   = True
+
+        # 2) We're about to place Player 1 first
+        self.state.pass_play_stage  = 0
+        self.state.current_player   = 0
+
+        # 3) Build two fresh boards for ships & two for attacks
+        self.state.pass_play_boards  = [create_board(), create_board()]
+        self.state.pass_play_attacks = [create_board(), create_board()]
+
+        # 4) Switch to the placement screen
+        self.state.game_state       = "placing"

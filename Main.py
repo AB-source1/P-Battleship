@@ -17,6 +17,8 @@ from screens.playing_render import PlayingRender
 from screens.stats_logic    import StatsLogic
 from screens.stats_render   import StatsRender
 from helpers.draw_helpers   import draw_modal
+from game.board_helpers     import create_board
+
 
 # ─── Pygame Initialization ───────────────────────────────────────────────────
 pygame.init()
@@ -244,6 +246,27 @@ while state.running:
             no_text="Close"
         )
 
+     # 8) Pass-and-Play handoff modal ─────────────────────────────
+    if getattr(state, 'show_pass_modal', False):
+        # When P1 finishes placing, we paused for the handoff.
+        def _confirm_pass():
+            # Hide this modal…
+            state.show_pass_modal = False
+            # …and reset the board for Player 2’s placement
+            state.player_board     = create_board()
+            placing_logic.reset()      # reload the ship queue UI
+            state.pass_play_stage  = 2
+            state.game_state       = "placing"
+
+        # Draw the “Pass to Player 2” overlay
+        draw_modal(
+            screen,
+            title="Pass to Player 2",
+            subtitle="Press Yes when ready",
+            on_yes=_confirm_pass,
+            on_no =_confirm_pass   # same behavior for simplicity
+        )
+    # ────────────────────────────────────────────────────────────
     pygame.display.flip()
     clock.tick(60)
 
