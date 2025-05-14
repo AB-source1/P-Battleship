@@ -38,6 +38,11 @@ class GameState:
         self.pass_play_attacks      = [None, None]
         self.pass_play_placed_ships = [None, None]
 
+        # per-player Pass&Play stats
+        self.pass_play_shots         = [0, 0]
+        self.pass_play_hits          = [0, 0]
+        self.pass_play_shot_times    = [[], []]
+
         # Kick off first full reset
         self.reset_all()
         # Main loop flag
@@ -128,6 +133,12 @@ class GameState:
         self.pass_play_boards         = [None, None]
         self.pass_play_attacks        = [None, None]
         self.pass_play_placed_ships   = [None, None]
+
+        # clear per-player stats
+        self.pass_play_shots         = [0, 0]
+        self.pass_play_hits          = [0, 0]
+        self.pass_play_shot_times    = [[], []]
+
 
         self.pass_play_shots      = [0, 0]
         self.pass_play_score           = [0, 0]
