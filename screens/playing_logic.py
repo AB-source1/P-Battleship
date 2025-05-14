@@ -59,31 +59,26 @@ class PlayingLogic:
             board   = state.pass_play_boards[1-p]
             if attacks[row][col] != Cell.EMPTY: return
 
-            hit, ship = fire_at(row, col, board)
+            hit, ship = fire_at(row, col, state.ai_board)
+            state.player_attacks[row][col] = Cell.HIT if hit else Cell.MISS
 
-            # 2) Mark where the player has shot
-            attacks[row][col] = Cell.HIT if hit else Cell.MISS
-
-                    # ─── record explosion at that cell ────────────────
+            # ─── spawn a fading explosion or splash ───────────
+            now = pygame.time.get_ticks()
             if hit:
-                
-                # record which board was hit (0=left,1=right)
-               
-                
                 state.explosions.append({
-                    "row": row,
-                    "col": col,
-                    "time": pygame.time.get_ticks(),
-                    "board_idx": (1-p) if state.pass_play_mode else 1
+                    "row":       row,
+                    "col":       col,
+                    "time":      now,
+                    "board_idx": 1     # right‐hand grid is the AI board
                 })
             else:
-                # record a water‐splash for a miss
                 state.miss_splashes.append({
-                    "row": row,
-                    "col": col,
-                    "time": pygame.time.get_ticks(),
-                    "board_idx": (1-p) if state.pass_play_mode else 1
+                    "row":       row,
+                    "col":       col,
+                    "time":      now,
+                    "board_idx": 1
                 })
+
             # 3) Record hit‐count if you still want it
             state.pass_play_shots[p] += 1
  
@@ -451,6 +446,23 @@ class PlayingLogic:
 
         # 2) Mark where the player has shot
         state.player_attacks[row][col] = Cell.HIT if hit else Cell.MISS
+    
+        # ─── spawn a fading explosion or splash ───────────
+        now = pygame.time.get_ticks()
+        if hit:
+            state.explosions.append({
+                "row":       row,
+                "col":       col,
+                "time":      now,
+                "board_idx": 1
+            })
+        else:
+            state.miss_splashes.append({
+                "row":       row,
+                "col":       col,
+                "time":      now,
+                "board_idx": 1
+            })
         
 
         # 3) Update hit count & remaining ships
