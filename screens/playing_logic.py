@@ -64,6 +64,17 @@ class PlayingLogic:
             # 2) Mark where the player has shot
             attacks[row][col] = Cell.HIT if hit else Cell.MISS
 
+                    # ─── record explosion at that cell ────────────────
+            if hit:
+                now = pygame.time.get_ticks()
+                # record which board was hit (0=left,1=right)
+                board_idx = 1 - p
+                state.explosions.append({
+                    "row": row,
+                    "col": col,
+                    "time": now,
+                    "board_idx": board_idx
+                })
             # 3) Record hit‐count if you still want it
             state.pass_play_shots[p] += 1
  
@@ -431,6 +442,7 @@ class PlayingLogic:
 
         # 2) Mark where the player has shot
         state.player_attacks[row][col] = Cell.HIT if hit else Cell.MISS
+        
 
         # 3) Update hit count & remaining ships
         if hit:

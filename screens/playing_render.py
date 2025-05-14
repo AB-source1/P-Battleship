@@ -33,7 +33,7 @@ class PlayingRender:
             )
 
             # --- RIGHT: Player 2’s board (ships hidden) ---
-            # --- RIGHT: Player 2’s board (ships hidden) ---
+         
             draw_grid(
                 screen,
                 state.pass_play_boards[1],
@@ -41,6 +41,27 @@ class PlayingRender:
                 Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
                 show_ships=False
             )
+
+            # ─── draw fading explosions & then red X ─────────
+            now = pygame.time.get_ticks()
+            fade_ms = Config.EXPLOSION_FADE_DURATION
+            for exp in state.explosions[:]:
+                elapsed = now - exp["time"]
+                # compute pixel coords
+                off_x = Config.BOARD_OFFSET_X if exp["board_idx"]==0 else Config.ENEMY_OFFSET_X
+                x = off_x + exp["col"] * Config.CELL_SIZE
+                y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + exp["row"] * Config.CELL_SIZE
+
+                if elapsed < fade_ms:
+                    # still fading: draw explosion with alpha
+                    img = Config.EXPLOSION_IMG.copy()
+                    alpha = int(255 * (1 - elapsed / fade_ms))
+                    img.set_alpha(alpha)
+                    screen.blit(img, (x, y))
+                else:
+                    # fade done: draw a red X and drop this explosion
+                    draw_x(screen, x, y, Config.CELL_SIZE)
+                    state.explosions.remove(exp)
 
                         # ─── Simplified: “Player 1” / “Player 2” + single Score ────
             label_y    = Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT
@@ -118,6 +139,8 @@ class PlayingRender:
             Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
             show_ships=False
             )
+        
+        
 
         rows = Config.GRID_SIZE
         cols = Config.GRID_SIZE
@@ -256,6 +279,8 @@ class PlayingRender:
                 x = Config.BOARD_OFFSET_X + col0 * Config.CELL_SIZE
                 y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + row0 * Config.CELL_SIZE
                 screen.blit(ship.image, (x, y))
+
+       
     
             # 3) now draw your hit/miss markers on top of the ships
             for r in range(Config.GRID_SIZE):

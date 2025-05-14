@@ -1,4 +1,6 @@
 import random
+import os
+import pygame
 
 class Config:
     # ─── Window & Grid Defaults ───
@@ -45,6 +47,15 @@ class Config:
     # ─── AI Difficulty Settings ───
     DIFFICULTIES        = ['Easy', 'Medium', 'Hard']
     DEFAULT_DIFFICULTY  = 'Easy'
+
+    ASSET_DIR = os.path.join(os.path.dirname(__file__), "..", "resources", "images")
+
+    EXPLOSION_IMG = pygame.transform.scale(
+        pygame.image.load(os.path.join(ASSET_DIR, "explosion.png")),
+        (CELL_SIZE, CELL_SIZE)
+    )
+    EXPLOSION_FADE_DURATION = 500  # milliseconds
+
 
     @staticmethod
     def generate_ships_for_grid():
