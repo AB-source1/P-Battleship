@@ -10,75 +10,61 @@ class StatsRender:
         # Draw the top bar (title, restart/quit buttons)
         draw_top_bar(screen, state)
 
-        # Winner message
-        if state.winner == "Player":
-            msg = "You won!"
-        else:
-            msg = "You lost!"
-        draw_text_center(screen, msg, Config.WIDTH // 2, 120, 48)
-        draw_text_center(screen, msg, Config.WIDTH // 2, 120, 48)
-
-        # ─── NEW: show the final score ─────────────────────────
-        draw_text_center(
-            screen,
-            f"Final Score: {state.score}",
-            Config.WIDTH // 2,
-            180,         # just below the win/lose banner
-            32           # a slightly smaller font than the title
-        )
-
         # Compute stats summary dictionaries
         def compute_stats(shots, hits, times):
             accuracy = (hits / shots * 100) if shots else 0
             if len(times) > 1:
                 total_ms = times[-1] - times[0]
-                avg_ms   = total_ms / (len(times) - 1)
+                avg_ms = total_ms / (len(times) - 1)
             else:
                 total_ms = 0
-                avg_ms   = 0
+                avg_ms = 0
             return {
                 "Shots": shots,
                 "Hits": hits,
                 "Accuracy": f"{accuracy:.1f}%",
-                "Avg/Shot": f"{avg_ms/1000:.2f}s",
-                "Total": f"{total_ms/1000:.2f}s"
+                "Avg/Shot": f"{avg_ms / 1000:.2f}s",
+                "Total": f"{total_ms / 1000:.2f}s"
             }
 
-        p_stats = compute_stats(
-            state.player_shots,
-            state.player_hits,
-            state.player_shot_times
-        )
-        o_stats = compute_stats(
-            state.ai_shots,
-            state.ai_hits,
-            state.ai_shot_times
-        )
+        p_stats = compute_stats(state.player_shots, state.player_hits, state.player_shot_times)
+        o_stats = compute_stats(state.ai_shots, state.ai_hits, state.ai_shot_times)
 
-        # Layout: two columns
+        # Layout values
+        stats_box_width = 700
+        stats_box_height = 380
+        stats_box_x = (Config.WIDTH - stats_box_width) // 2
+        stats_box_y = 100
+
+        # ─── Draw background box ───────────────────────────
+        outer_rect = pygame.Rect(stats_box_x, stats_box_y, stats_box_width, stats_box_height)
+        pygame.draw.rect(screen, (255, 220, 0), outer_rect)  # Yellow border
+        inner_rect = outer_rect.inflate(-6, -6)
+        pygame.draw.rect(screen, (10, 40, 80), inner_rect)   # Dark blue fill
+
+        # ─── Header inside the box ─────────────────────────
+        msg = "You won!" if state.winner == "Player" else "You lost!"
+        draw_text_center(screen, msg, Config.WIDTH // 2, stats_box_y + 30, 42)
+        draw_text_center(screen, f"Final Score: {state.score}", Config.WIDTH // 2, stats_box_y + 75, 30)
+
+        # ─── Stat labels ───────────────────────────────────
         left_x = Config.WIDTH // 4
         right_x = Config.WIDTH * 3 // 4
-        start_y = 200
+        start_y = stats_box_y + 120
         line_h = 40
 
-        # Column headers adapt for multiplayer
-        if state.network:
-            left_label = "You"
-            right_label = "Opponent"
-        else:
-            left_label = "Player"
-            right_label = "Computer"
-
+        left_label = "You" if state.network else "Player"
+        right_label = "Opponent" if state.network else "Computer"
         draw_text_center(screen, left_label, left_x, start_y, 36)
         draw_text_center(screen, right_label, right_x, start_y, 36)
 
-        # Draw each stat row
+        # ─── Each stat row ─────────────────────────────────
         for i, key in enumerate(p_stats.keys()):
             y = start_y + line_h * (i + 1)
             draw_text_center(screen, f"{key}: {p_stats[key]}", left_x, y, 28)
             draw_text_center(screen, f"{key}: {o_stats[key]}", right_x, y, 28)
 
-        # Action buttons: Play Again and Main Menu
+        # ─── Buttons ───────────────────────────────────────
         btn_y = Config.HEIGHT - 100
         draw_button(
             screen,

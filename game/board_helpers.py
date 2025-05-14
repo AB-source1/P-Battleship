@@ -13,23 +13,34 @@ def create_board():
     return [[Cell.EMPTY for _ in range(Config.GRID_SIZE)] for _ in range(Config.GRID_SIZE)]
 
 def place_ship_randomly(board, size):
-    """Randomly place a ship of given size onto the board."""
+    """Randomly place a ship of given size onto the board with 1-cell buffer zone."""
+
+    def is_clear_area(r, c):
+        """Check surrounding 3x3 area to ensure no other ships are nearby."""
+        for dr in [-1, 0, 1]:
+            for dc in [-1, 0, 1]:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < Config.GRID_SIZE and 0 <= nc < Config.GRID_SIZE:
+                    if board[nr][nc] == Cell.SHIP:
+                        return False
+        return True
+
     while True:
         orientation = random.choice(['h', 'v'])
         if orientation == 'h':
             row = random.randint(0, Config.GRID_SIZE - 1)
             col = random.randint(0, Config.GRID_SIZE - size)
-            if all(board[row][col + i] == Cell.EMPTY for i in range(size)):
-                for i in range(size):
-                    board[row][col + i] = Cell.SHIP
-                break
+            positions = [(row, col + i) for i in range(size)]
         else:
             row = random.randint(0, Config.GRID_SIZE - size)
             col = random.randint(0, Config.GRID_SIZE - 1)
-            if all(board[row + i][col] == Cell.EMPTY for i in range(size)):
-                for i in range(size):
-                    board[row + i][col] = Cell.SHIP
-                break
+            positions = [(row + i, col) for i in range(size)]
+
+        # Ensure all positions and surrounding area are clear
+        if all(board[r][c] == Cell.EMPTY and is_clear_area(r, c) for r, c in positions):
+            for r, c in positions:
+                board[r][c] = Cell.SHIP
+            break
 
 def get_grid_pos(mouse_pos, offset_x, offset_y):
     """Convert pixel position to grid (row, col) based on offsets."""

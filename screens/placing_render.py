@@ -32,7 +32,7 @@ class PlacingRender:
         draw_button(screen, "Back (esc)", 10, 40, 130, 30,
                     Config.GRAY, Config.DARK_GRAY, back)
 
-       # Player’s board (don’t auto‐draw ships as blue squares)
+        # Player’s board (don’t auto‐draw ships as blue squares)
         draw_grid(
             screen,
             state.player_board,
@@ -43,38 +43,24 @@ class PlacingRender:
 
         # Overlay each placed ship’s real sprite at its grid location
         for ship in self.logic.placed_ships:
-            # find the top-left cell of this ship
             rows = [r for r, c in ship.coords]
             cols = [c for r, c in ship.coords]
             row0, col0 = min(rows), min(cols)
-
-            # compute pixel position on the grid
             x = Config.BOARD_OFFSET_X + col0 * Config.CELL_SIZE
             y = Config.BOARD_OFFSET_Y + row0 * Config.CELL_SIZE
-
-            # blit the sprite (already rotated/oriented)  
             screen.blit(ship.image, (x, y))
 
-        # “Ships Left” counter
+        # “Ships Left” counter in a boxed label
         ships_left = len(self.logic.ship_queue) + (1 if self.logic.active_ship else 0)
-        draw_text_center(
-            screen,
-            f"Ships Left: {ships_left}",
-            Config.WIDTH - 300, 100, 28
-        )
+        font = pygame.font.SysFont("Arial", 24)
+        draw_boxed_label(screen, f"Ships Left: {ships_left}", Config.WIDTH - 180, 100, font)
 
         # Live placement preview when dragging
         if self.logic.active_ship and self.logic.active_ship.dragging:
-            # Compute which grid cells the ship would occupy
-            mx, my = self.logic.active_ship.rect.center
-            row = (my - Config.BOARD_OFFSET_Y) // Config.CELL_SIZE
-            col = (mx - Config.BOARD_OFFSET_X) // Config.CELL_SIZE
-
             preview_cells = self.logic.active_ship.get_preview_cells(
                 Config.BOARD_OFFSET_X, Config.BOARD_OFFSET_Y
             )
             if preview_cells:
-                # Highlight the cells instead of showing the sprite
                 valid = all(
                     state.player_board[r][c] == Cell.EMPTY
                     for r, c in preview_cells
@@ -87,7 +73,6 @@ class PlacingRender:
 
         # Draw the static “next ship” preview
         if self.logic.preview_ship:
-            # Position and draw the next‐ship sprite instead of a grey box
             pos = self.logic.preview_area_position()
             self.logic.preview_ship.rect.topleft = pos
             self.logic.preview_ship.draw(screen)
@@ -123,3 +108,24 @@ class PlacingRender:
                 Config.HEIGHT // 2,
                 28
             )
+
+# ─────────────────────────────────────────────────────────────────────
+def draw_boxed_label(screen, text, center_x, center_y, font):
+    text_color = (255, 255, 255)
+    bg_color = (10, 40, 80)
+    border_color = (255, 220, 0)
+
+    text_surface = font.render(text, True, text_color)
+    text_rect = text_surface.get_rect(center=(center_x, center_y))
+    padding = 10
+    box_rect = pygame.Rect(
+        text_rect.left - padding,
+        text_rect.top - padding,
+        text_rect.width + 2 * padding,
+        text_rect.height + 2 * padding
+    )
+
+    pygame.draw.rect(screen, border_color, box_rect)
+    inner_rect = box_rect.inflate(-4, -4)
+    pygame.draw.rect(screen, bg_color, inner_rect)
+    screen.blit(text_surface, text_rect)

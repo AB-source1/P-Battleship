@@ -28,13 +28,13 @@ class PlacingLogic:
         """Pop the next ship as active and peek the one after as preview."""
         if self.ship_queue:
             self.active_ship = self.ship_queue.pop(0)
-            self.active_ship.rect.topleft = self.main_area_position()
+            self.active_ship.rect = self.active_ship.image.get_rect(topleft=self.main_area_position())
         else:
             self.active_ship = None
 
         if self.ship_queue:
             self.preview_ship = self.ship_queue[0]
-            self.preview_ship.rect.topleft = self.preview_area_position()
+            self.preview_ship.rect = self.preview_ship.image.get_rect(topleft=self.preview_area_position())
         else:
             self.preview_ship = None  
 
@@ -99,7 +99,7 @@ class PlacingLogic:
     def snap_back(self):
         """Return the active ship to its sidebar position."""
         if self.active_ship:
-            self.active_ship.rect.topleft = self.main_area_position()
+            self.active_ship.rect = self.active_ship.image.get_rect(topleft=self.main_area_position())
 
     def handle_event(self, event: pygame.event.Event, state):
         """
@@ -144,16 +144,14 @@ class PlacingLogic:
                             # Single-player: go straight to playing
                             if not state.network:
                                 state.player_ships  = state.count_ships(state.player_board)
-                                # save the sprite objects for the playing screen
                                 state.placed_ships  = self.placed_ships.copy()
                                 state.game_state    = "playing"
-                            # Multiplayer: send handshake and wait
                             else:
+                                # Multiplayer: send handshake and wait
                                 state.network.send({"type":"placement_done"})
                                 state.local_ready      = True
                                 state.waiting_for_sync = True
-                                # also persist sprites for when multiplayer actually starts
-                                state.placed_ships    = self.placed_ships.copy()
+                                state.placed_ships     = self.placed_ships.copy()
                     else:
                         self.snap_back()
                 else:
@@ -192,11 +190,11 @@ class PlacingLogic:
             if self.active_ship:
                 self.ship_queue.insert(0, self.active_ship)
             self.active_ship = last_ship
-            self.active_ship.image.topleft = self.main_area_position()
+            self.active_ship.rect = self.active_ship.image.get_rect(topleft=self.main_area_position())
 
             if self.ship_queue:
                 self.preview_ship = self.ship_queue[0]
-                self.preview_ship.image.topleft = self.preview_area_position()
+                self.preview_ship.rect = self.preview_ship.image.get_rect(topleft=self.preview_area_position())
             else:
                 self.preview_ship = None  
 
@@ -206,4 +204,5 @@ class PlacingLogic:
         self.preview_ship = None
         self.ship_queue   = []
         self.placed_ships = []
-        self.setup_ships()  
+        self.setup_ships()
+
