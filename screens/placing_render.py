@@ -44,7 +44,7 @@ class PlacingRender:
             else:
                 state.game_state = "menu"
         draw_button(screen, "Back (esc)", 10, 40, 130, 30,
-                    Config.GRAY, Config.DARK_GRAY, back)
+                    Config.GRAY, Config.DARK_GRAY, back,3)
 
        # ─── Scale the panel with a 1-cell margin on all sides ────────
         padded = Config.CELL_SIZE * 2
@@ -133,7 +133,7 @@ class PlacingRender:
             140, 40,
             Config.GRAY, Config.DARK_GRAY,
             lambda: self.logic.active_ship.rotate()
-                    if self.logic.active_ship else None
+                    if self.logic.active_ship else None,3
         )
         draw_button(
             screen, "Undo Last Ship",
@@ -141,7 +141,7 @@ class PlacingRender:
             Config.HEIGHT // 2 + 160,
             140, 40,
             Config.GRAY, Config.DARK_GRAY,
-            self.logic.undo_last_ship
+            self.logic.undo_last_ship,3
         )
 
         # ─── Multiplayer “Waiting” Overlay ───────────────────────────

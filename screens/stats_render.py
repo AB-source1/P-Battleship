@@ -115,7 +115,7 @@ class StatsRender:
             50,
             Config.GREEN,
             Config.DARK_GREEN,
-            self.logic.play_again
+            self.logic.play_again,3
         )
         draw_button(
             screen,
@@ -126,5 +126,5 @@ class StatsRender:
             50,
             Config.GRAY,
             Config.DARK_GRAY,
-            self.logic.to_menu
+            self.logic.to_menu,3
         )

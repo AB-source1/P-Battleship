@@ -117,8 +117,8 @@ def draw_modal(screen, title, subtitle, on_yes, on_no):
     draw_text_center(screen, title, box_rect.centerx, box_rect.y + 40, 36)
     draw_text_center(screen, subtitle, box_rect.centerx, box_rect.y + 80, 24)
 
-    draw_button(screen, "Yes", box_rect.x + 60, box_rect.y + 120, 100, 40, Config.GREEN, Config.DARK_GREEN, on_yes)
-    draw_button(screen, "No", box_rect.right - 160, box_rect.y + 120, 100, 40, Config.RED, Config.DARK_GRAY, on_no)
+    draw_button(screen, "Yes", box_rect.x + 60, box_rect.y + 120, 100, 40, Config.GREEN, Config.DARK_GREEN, on_yes,3)
+    draw_button(screen, "No", box_rect.right - 160, box_rect.y + 120, 100, 40, Config.RED, Config.DARK_GRAY, on_no,3)
 
 def draw_text_input_box(screen, user_text):
     font = pygame.font.SysFont(None, 36)

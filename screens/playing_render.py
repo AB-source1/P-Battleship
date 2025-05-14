@@ -187,7 +187,7 @@ class PlayingRender:
         draw_button(screen, "Restart",
                     Config.WIDTH//2 - 75, Config.HEIGHT//2,
                     150, 50, Config.GREEN, Config.DARK_GREEN,
-                    self.logic.state.reset_all)
+                    self.logic.state.reset_all,3)
 
     def _draw_effects(self, screen, state):
         now = pygame.time.get_ticks()
