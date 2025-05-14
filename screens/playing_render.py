@@ -155,8 +155,25 @@ class PlayingRender:
                                 queue.append((nr,nc))
                                 cluster.append((nr,nc))
                     size = len(cluster)
-                    if size not in SHIP_IMAGE_FILES: continue
-                    horiz = all(r0 == cluster[0][0] for r0,_ in cluster)
+                    if size not in SHIP_IMAGE_FILES: 
+                        continue
+                    horiz = all(r0 == cluster[0][0] for r0, _ in cluster)
+                    
+                    # ─── ENSURE NO UNHIT NEIGHBORS FOR THIS CLUSTER ───
+                    # if there’s an unhit ship-cell just off either end, skip it
+                    if horiz:
+                        r0       = cluster[0][0]
+                        cols_hit = sorted(c0 for _,c0 in cluster)
+                        if ((cols_hit[0] - 1 >= 0 and state.computer_board[r0][cols_hit[0]-1] == Cell.SHIP)
+                        or (cols_hit[-1]+1 < cols and state.computer_board[r0][cols_hit[-1]+1] == Cell.SHIP)):
+                            continue
+                    else:
+                        c0       = cluster[0][1]
+                        rows_hit = sorted(r0 for r0,_ in cluster)
+                        if ((rows_hit[0] - 1 >= 0 and state.computer_board[rows_hit[0]-1][c0] == Cell.SHIP)
+                        or (rows_hit[-1]+1 < rows and state.computer_board[rows_hit[-1]+1][c0] == Cell.SHIP)):
+                            continue
+
                     min_r = min(r0 for r0,_ in cluster)
                     min_c = min(c0 for _,c0 in cluster)
                     ship = DraggableShip(size,0,0)

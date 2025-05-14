@@ -66,14 +66,23 @@ class PlayingLogic:
 
                     # ─── record explosion at that cell ────────────────
             if hit:
-                now = pygame.time.get_ticks()
+                
                 # record which board was hit (0=left,1=right)
-                board_idx = 1 - p
+               
+                
                 state.explosions.append({
                     "row": row,
                     "col": col,
-                    "time": now,
-                    "board_idx": board_idx
+                    "time": pygame.time.get_ticks(),
+                    "board_idx": (1-p) if state.pass_play_mode else 1
+                })
+            else:
+                # record a water‐splash for a miss
+                state.miss_splashes.append({
+                    "row": row,
+                    "col": col,
+                    "time": pygame.time.get_ticks(),
+                    "board_idx": (1-p) if state.pass_play_mode else 1
                 })
             # 3) Record hit‐count if you still want it
             state.pass_play_shots[p] += 1
