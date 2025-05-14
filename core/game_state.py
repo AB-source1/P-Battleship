@@ -61,6 +61,7 @@ class GameState:
 
         #explostion
         self.explosions             = []
+        self.miss_splashes  = []
 
     def reset(self):
         """(Re)create both boards and the player's attack grid."""
@@ -154,5 +155,6 @@ class GameState:
 
         # clear explosion history
         self.explosions             = []
+        self.miss_splashes  = []
 
         

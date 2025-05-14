@@ -54,8 +54,13 @@ class Config:
         pygame.image.load(os.path.join(ASSET_DIR, "explosion.png")),
         (CELL_SIZE, CELL_SIZE)
     )
-    EXPLOSION_FADE_DURATION = 500  # milliseconds
 
+    MISS_IMG = pygame.transform.scale(
+        pygame.image.load(os.path.join(ASSET_DIR, "Miss.png")),
+        (CELL_SIZE, CELL_SIZE))
+
+    EXPLOSION_FADE_DURATION = 500  # milliseconds
+    MISS_FADE_DURATION      = 500  # ms (same fade duration for splashes)
 
     @staticmethod
     def generate_ships_for_grid():
