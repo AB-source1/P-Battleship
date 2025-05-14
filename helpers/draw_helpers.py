@@ -98,9 +98,9 @@ def draw_grid(screen, board, offset_x, offset_y, show_ships=False):
                 else:
                     pygame.draw.rect(screen, color, rect.inflate(-4, -4))
 
-def draw_text_center(screen, text, x, y, font_size=30):
+def draw_text_center(screen, text, x, y, font_size=30,bg_color=None):
     font = pygame.font.SysFont(None, font_size)
-    surface = font.render(text, True, Config.WHITE)
+    surface = font.render(text, True, Config.WHITE,bg_color)
     rect = surface.get_rect(center=(x, y))
     screen.blit(surface, rect)
 

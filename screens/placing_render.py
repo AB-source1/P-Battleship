@@ -89,7 +89,8 @@ class PlacingRender:
         draw_text_center(
             screen,
             f"Ships Left: {ships_left}",
-            Config.WIDTH - 300, 100, 28
+            Config.WIDTH - 300, 100, 28,
+            Config.DARK_GRAY
         )
 
          # Live placement preview when dragging
