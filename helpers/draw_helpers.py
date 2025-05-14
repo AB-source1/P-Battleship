@@ -61,10 +61,12 @@ def draw_button(screen, text, x, y, w, h, color, hover_color, action=None,border
     if rect.collidepoint(mouse):
         if click[0] == 1 and not button_states[key]:
             button_states[key] = True
-            if action:
-                action()
+        
         elif click[0] == 0:
-            button_states[key] = False
+            if button_states.get(key, False):
+                button_states[key] = False
+                if action:
+                    action()
     else:
         button_states[key] = False
 
