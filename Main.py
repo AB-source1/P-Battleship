@@ -4,8 +4,7 @@ import pygame
 import sys
 from core.config            import Config
 from core.game_state        import GameState
-from screens.menu_logic     import MenuLogic
-from screens.menu_render    import MenuRender
+
 from screens.settings_logic import SettingsLogic
 from screens.settings_render import SettingsRender
 from screens.lobby_logic    import LobbyLogic
@@ -81,9 +80,7 @@ def run_game(initial_state="menu"):
     state.is_fullscreen = False
     # Now state.reset_all() will call placing_logic.reset() for ship placement
 
-    menu_logic      = MenuLogic(screen, state)
-    menu_render     = MenuRender(menu_logic)
-
+ 
     settings_logic  = SettingsLogic(screen, state)
     settings_render = SettingsRender(settings_logic)
 
@@ -194,9 +191,8 @@ def run_game(initial_state="menu"):
                 continue
 
             # Dispatch to each screen’s logic
-            if   state.game_state == "menu":
-                menu_logic.handle_event(event, state)
-            elif state.game_state == "lobby":
+          
+            if state.game_state == "lobby":
                 lobby_logic.handle_event(event)
             elif state.game_state == "settings":
                 settings_logic.handle_event(event)
@@ -230,9 +226,8 @@ def run_game(initial_state="menu"):
             canvas.blit(battle_background, (0, 0))
 
         # UI layer
-        if   state.game_state == "menu":
-            menu_render.draw(canvas, state)
-        elif state.game_state == "lobby":
+        
+        if state.game_state == "lobby":
             lobby_render.draw(canvas, state)
         elif state.game_state == "settings":
             settings_render.draw(canvas, state)
