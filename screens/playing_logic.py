@@ -7,9 +7,12 @@ from game.board_helpers import Cell, get_grid_pos, fire_at
 
 
 class PlayingLogic:
-    def __init__(self, screen, state: GameState):
+    def __init__(self, screen, state: GameState, *, hit_sfx: pygame.mixer.Sound, miss_sfx: pygame.mixer.Sound):
         self.screen = screen
         self.state  = state
+            # store references to our sound effects
+        self.hit_sfx  = hit_sfx
+        self.miss_sfx = miss_sfx
         self.reset()
 
     def reset(self) -> None:
@@ -95,6 +98,13 @@ class PlayingLogic:
                     "time":      now,
                     "board_idx": board_idx,
                 })
+
+
+             # ─── play the corresponding sound effect ─────────────
+            if hit:
+                self.hit_sfx.play()
+            else:
+                self.miss_sfx.play()
 
             # 9) Update shot count
             state.pass_play_shots[p] += 1

@@ -54,12 +54,19 @@ def show_tk_menu():
 def run_game(initial_state="menu"):
     # ─── Pygame Initialization ───────────────────────────────────────────────────
     pygame.init()
+    pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
  
     # -----------------------------------------
     VW, VH = Config.WIDTH, Config.HEIGHT
     canvas = pygame.Surface((VW, VH))
     screen = pygame.display.set_mode((VW, VH), pygame.RESIZABLE)
     pygame.display.set_caption("P-Battleship")
+
+     # ─── Load & start background music ─────────────────────────
+    bgm_path = "resources/music/background_music.mp3"
+    pygame.mixer.music.load(bgm_path)
+    pygame.mixer.music.set_volume(0.5)       # 50% volume
+    pygame.mixer.music.play(loops=-1)        # loop forever
     # ─── Load both menu & battle backgrounds ────────────────────────────────────
     bg_menu_img   = pygame.image.load("resources/images/cartoon_loading.png").convert()
     battle_bg_img = pygame.image.load("resources/images/cartoon_battle_bg.png").convert()
@@ -87,7 +94,13 @@ def run_game(initial_state="menu"):
     lobby_logic     = LobbyLogic(screen, state)
     lobby_render    = LobbyRender(lobby_logic)
 
-    playing_logic   = PlayingLogic(screen, state)
+    
+     # create the two SFX
+    hit_sfx  = pygame.mixer.Sound("resources/music/hit.mp3")
+    miss_sfx = pygame.mixer.Sound("resources/music/ship-miss.mp3")
+    hit_sfx.set_volume(0.7)
+    miss_sfx.set_volume(0.7)
+    playing_logic   = PlayingLogic(screen, state, hit_sfx=hit_sfx, miss_sfx=miss_sfx)
     playing_render  = PlayingRender(playing_logic)
 
     stats_logic     = StatsLogic(screen, state)
