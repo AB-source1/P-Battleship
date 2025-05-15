@@ -15,14 +15,13 @@ class PlacingLogic:
         self.preview_ship = None
         self.ship_queue   = []
         self.placed_ships = []
+        self.ready_to_start = False  # <-- NEW FLAG
         self.setup_ships()
         self.grid_offset_x = Config.BOARD_OFFSET_X + 34
         self.grid_offset_y = Config.BOARD_OFFSET_Y + 31
         self.pass_play_placed_ships = [None, None]
 
-
     def setup_ships(self):
-        """Fill ship_queue from Config.SHIP_SIZES and set active/preview."""
         self.ship_queue = [
             DraggableShip(size, *self.main_area_position())
             for size in Config.SHIP_SIZES
@@ -30,7 +29,6 @@ class PlacingLogic:
         self.update_active_and_preview()  
 
     def update_active_and_preview(self):
-        """Pop the next ship as active and peek the one after as preview."""
         if self.ship_queue:
             self.active_ship = self.ship_queue.pop(0)
             self.active_ship.rect.topleft = self.main_area_position()
@@ -50,10 +48,6 @@ class PlacingLogic:
         return (Config.WIDTH - 250, Config.HEIGHT // 2 - 100)
 
     def try_place_on_grid(self, ship):
-        """
-        Attempt to lock the ship onto the grid.
-        Returns True on success, False otherwise.
-        """
         row, col = get_grid_pos(
             (ship.rect.centerx, ship.rect.centery),
             self.grid_offset_x, self.grid_offset_y
@@ -61,7 +55,6 @@ class PlacingLogic:
         if row is None or col is None:
             return False
 
-        # Center the placement coords based on orientation
         if ship.orientation == 'h':
             col -= ship.size // 2
         else:
@@ -102,16 +95,10 @@ class PlacingLogic:
         return False  
 
     def snap_back(self):
-        """Return the active ship to its sidebar position."""
         if self.active_ship:
             self.active_ship.rect.topleft = self.main_area_position()
 
     def handle_event(self, event: pygame.event.Event, state):
-        """
-        Handle dragging/rotation/placement of ships.
-        Once all ships are placed, in multiplayer send a 'placement_done'
-        handshake; otherwise jump to 'playing'.
-        """
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.active_ship and self.active_ship.rect.collidepoint(event.pos):
                 self.active_ship.start_dragging(*event.pos)
@@ -134,7 +121,6 @@ class PlacingLogic:
                     row -= self.active_ship.size // 2
 
                 if 0 <= row < Config.GRID_SIZE and 0 <= col < Config.GRID_SIZE:
-                    # Snap visually to the grid
                     self.active_ship.rect.topleft = (
                         self.grid_offset_x + col * Config.CELL_SIZE,
                         self.grid_offset_y + row * Config.CELL_SIZE
@@ -144,66 +130,19 @@ class PlacingLogic:
                         self.placed_ships.append(self.active_ship)
                         self.update_active_and_preview()
 
-                        # All ships placed?
+                        # All ships placed? Then wait for Ready button
                         if not self.active_ship and not self.preview_ship:
-                            # ——— PASS & PLAY MODE —————————————
-                            if state.pass_play_mode:
-                                # Stage 0: Player 1 finished placing
-                                if state.pass_play_stage == 0:
-                                    # snapshot P1’s board
-                                    state.pass_play_boards[0]       = [row[:] for row in state.player_board]
-                                    # capture exactly which ships & where
-                                    state.pass_play_placed_ships[0] = [
-                                        ship.coords[:] for ship in self.placed_ships
-                                    ]   
-                                    state.pass_play_stage = 1
-                                    state.show_pass_modal = True
-                                    return
-
-                                # Stage 2: Player 2 finished placing
-                                if state.pass_play_stage == 2:
-                                    # snapshot P2’s board
-                                    state.pass_play_boards[1]       = [row[:] for row in state.player_board]
-                                    # capture P2’s ships too
-                                    state.pass_play_placed_ships[1] = [
-                                        ship.coords[:] for ship in self.placed_ships
-                                    ]
-                                    state.pass_play_stage  = 3
-                                    # prime for playing as Player 1’s turn
-                                    state.current_player   = 0
-                                    state.player_board     = state.pass_play_boards[0]
-                                    state.player_attacks   = state.pass_play_attacks[0]
-                                    state.player_ships     = state.count_ships(
-                                        state.player_board
-                                    )
-                                    state.game_state       = "playing"
-                                    return
-
-                            # ——— EXISTING SINGLE-/MULTI-PLAYER FALL-BACK ———
-                            if not state.network:
-                                state.player_ships  = state.count_ships(state.player_board)
-                                state.placed_ships  = self.placed_ships.copy()
-                                state.game_state    = "playing"
-                            else:
-                                state.network.send({"type":"placement_done"})
-                                state.local_ready      = True
-                                state.waiting_for_sync = True
-                                state.placed_ships     = self.placed_ships.copy()
+                            self.ready_to_start = True  # <-- just flag it
                     else:
                         self.snap_back()
                 else:
                     self.snap_back()
          
-
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_r and self.active_ship:
                 self.active_ship.rotate()  
 
     def update(self, state):
-        """
-        In multiplayer, poll for the peer's 'placement_done' or 'disconnect'.
-        Transition to 'playing' once both are ready.
-        """
         if state.network and state.waiting_for_sync:
             msg = state.network.recv()
             if msg:
@@ -217,14 +156,46 @@ class PlacingLogic:
                     state.player_ships     = state.count_ships(state.player_board)
                     state.game_state       = "playing"
 
+    def on_ready_pressed(self):
+        state = self.state
+        if state.pass_play_mode:
+            if state.pass_play_stage == 0:
+                state.pass_play_boards[0] = [row[:] for row in state.player_board]
+                state.pass_play_placed_ships[0] = [
+                    ship.coords[:] for ship in self.placed_ships
+                ]   
+                state.pass_play_stage = 1
+                state.show_pass_modal = True
+                return
+            if state.pass_play_stage == 2:
+                state.pass_play_boards[1] = [row[:] for row in state.player_board]
+                state.pass_play_placed_ships[1] = [
+                    ship.coords[:] for ship in self.placed_ships
+                ]
+                state.pass_play_stage  = 3
+                state.current_player   = 0
+                state.player_board     = state.pass_play_boards[0]
+                state.player_attacks   = state.pass_play_attacks[0]
+                state.player_ships     = state.count_ships(state.player_board)
+                state.game_state       = "playing"
+                return
+
+        if not state.network:
+            state.player_ships = state.count_ships(state.player_board)
+            state.placed_ships = self.placed_ships.copy()
+            state.game_state = "playing"
+        else:
+            state.network.send({"type": "placement_done"})
+            state.local_ready = True
+            state.waiting_for_sync = True
+            state.placed_ships = self.placed_ships.copy()
+
     def undo_last_ship(self):
-        """Remove the most recently placed ship and return it to the queue."""
         if self.placed_ships:
             last_ship = self.placed_ships.pop()
             for (r, c) in last_ship.coords:
                 self.state.player_board[r][c] = Cell.EMPTY
 
-            # Put the undone ship back at the front
             if self.active_ship:
                 self.ship_queue.insert(0, self.active_ship)
             self.active_ship = last_ship
@@ -236,10 +207,12 @@ class PlacingLogic:
             else:
                 self.preview_ship = None  
 
+            self.ready_to_start = False  # undo disables ready
+
     def reset(self):
-        """Clear all placement state and re-populate the ship queue."""
         self.active_ship  = None
         self.preview_ship = None
         self.ship_queue   = []
         self.placed_ships = []
+        self.ready_to_start = False
         self.setup_ships()  
