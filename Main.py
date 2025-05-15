@@ -68,7 +68,7 @@ def run_game(initial_state="menu", state=None):
      # ─── Load & start background music ─────────────────────────
     bgm_path = "resources/music/background_music.mp3"
     pygame.mixer.music.load(bgm_path)
-    pygame.mixer.music.set_volume(0.5)       # 50% volume
+    pygame.mixer.music.set_volume(0.2)       # 50% volume
     pygame.mixer.music.play(loops=-1)        # loop forever
     # ─── Load both menu & battle backgrounds ────────────────────────────────────
     bg_menu_img   = pygame.image.load("resources/images/cartoon_loading.png").convert()

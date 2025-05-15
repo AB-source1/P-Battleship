@@ -9,6 +9,7 @@ class GameState:
         self.show_restart_modal = False
         self.show_quit_modal    = False
         self.audio_enabled      = True  # safe to read in draw_top_bar
+        self.sfxenabled = True
 
         # AI difficulty & memory
         self.difficulty       = Config.DEFAULT_DIFFICULTY
@@ -62,6 +63,8 @@ class GameState:
         #explostion
         self.explosions             = []
         self.miss_splashes  = []
+
+
 
     def reset(self):
         """(Re)create both boards and the player's attack grid."""
