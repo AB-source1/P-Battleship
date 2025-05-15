@@ -38,7 +38,6 @@ class MenuTk:
         btn_info = [
             ("Play",          self.on_play,         Config.GREEN),
             ("Settings",      self.on_settings,     Config.GRAY),
-            ("Multiplayer",   self.on_multiplayer,  Config.BLUE),
             ("Pass & Play",   self.on_pass_and_play,Config.GREEN),
             ("Quit",          self.on_quit,         Config.RED),
         ]
