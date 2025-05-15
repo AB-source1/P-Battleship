@@ -16,7 +16,7 @@ from screens.playing_logic  import PlayingLogic
 from screens.playing_render import PlayingRender
 from screens.stats_logic    import StatsLogic
 from screens.stats_render   import StatsRender
-from helpers.draw_helpers   import draw_modal
+from helpers.draw_helpers   import draw_modal,draw_button,draw_text_center
 from game.board_helpers     import create_board
 
 
@@ -204,16 +204,53 @@ while state.running:
                    "Other player left.",
                    _goto_menu, _goto_menu)
     if getattr(state, "show_pass_modal", False):
-        def _pass(): 
-            state.show_pass_modal=False
-            state.player_board = create_board()
+        def confirm_pass():
+            state.show_pass_modal   = False
+            state.player_board     = create_board()
             placing_logic.reset()
-            state.pass_play_stage=2
-            state.game_state="placing"
-        draw_modal(canvas,
-                   "Pass to Player 2",
-                   "Press Yes when ready",
-                   _pass, _pass)
+            state.pass_play_stage   = 2
+            state.game_state        = "placing"
+
+        # 2) Snapshot & blur the battlefield behind
+        bg      = canvas.copy()
+        # 1) Show the static battle background (no ships visible)
+        canvas.blit(battle_background, (0, 0))
+        w, h = canvas.get_size()
+
+        # 3) Dark translucent overlay
+        overlay = pygame.Surface((w, h), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        canvas.blit(overlay, (0, 0))
+
+        # 4) Draw the modal box
+        box_w, box_h = 400, 180
+        box_rect = pygame.Rect(
+            (Config.WIDTH  - box_w) // 2,
+            (Config.HEIGHT - box_h) // 2,
+            box_w, box_h
+        )
+        pygame.draw.rect(canvas, Config.DARK_GRAY, box_rect)
+        pygame.draw.rect(canvas, Config.WHITE,    box_rect, 2)
+
+        draw_text_center(
+            canvas, "Pass to Player 2",
+            box_rect.centerx, box_rect.y + 40, 36
+        )
+        draw_text_center(
+            canvas, "Press Yes when ready",
+            box_rect.centerx, box_rect.y + 80, 24
+        )
+
+        # 5) Single “Yes” button
+        draw_button(
+            canvas, "Yes",
+            box_rect.centerx - 50,
+            box_rect.y + 120,
+            100, 40,
+            Config.GREEN, Config.DARK_GREEN,
+            confirm_pass,
+            3
+        )
 
     # ─── 4) STRETCH + FLIP ONCE ─────────────────────────────────────────────
     win_w, win_h = screen.get_size()
