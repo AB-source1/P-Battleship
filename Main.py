@@ -1,5 +1,6 @@
 # Main.py
 import os
+os.environ["SDL_VIDEO_CENTERED"] = "1"
 import pygame
 import sys
 from core.config            import Config

@@ -11,6 +11,12 @@ class MenuTk:
         self.root.minsize(400, 300)
         self.root.configure(bg="black")
 
+        screen_w = self.root.winfo_screenwidth()
+        screen_h = self.root.winfo_screenheight()
+        x = (screen_w  - Config.WIDTH)  // 2
+        y = (screen_h - Config.HEIGHT) // 2
+        self.root.geometry(f"{Config.WIDTH}x{Config.HEIGHT}+{x}+{y}")
+
         self.canvas = tk.Canvas(self.root, bg="black", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
 
