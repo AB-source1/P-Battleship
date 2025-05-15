@@ -149,6 +149,20 @@ class PlayingRender:
                              Config.TOP_BAR_HEIGHT // 2,
                              font_size=24)
 
+         # ─── Turn indicator (single-player vs AI or network) ─────────────────
+        if state.network:
+            # multiplayer over network
+            turn_label = "Your Turn" if self.logic.my_turn else "Opponent's Turn"
+        else:
+            # single-player: if AI is pending, it's AI's turn, otherwise yours
+            turn_label = "AI's Turn" if state.ai_turn_pending else "Your Turn"
+        draw_text_center(
+            screen,
+            turn_label,
+            Config.WIDTH // 2,
+            Config.TOP_BAR_HEIGHT + 50,
+            font_size=24
+        )
         # End-of-game or active placement
         if state.player_ships == 0:
             msg = f"{state.player_name or 'You'} lost! Click Restart"
