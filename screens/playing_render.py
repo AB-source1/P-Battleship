@@ -11,19 +11,17 @@ _panel_raw = None
 class PlayingRender:
     def __init__(self, logic):
         self.logic = logic
-        # load & cache raw grid_panel only once
+
+        # use scaled cell size
+        self.cell_size = Config.PLAYING_CELL_SIZE
+        grid_px = Config.GRID_SIZE * self.cell_size
+        margin  = int(1.9 * self.cell_size)
+        padded  = grid_px + 2 * margin
+
+        # scale the panel once
         global _panel_raw
         if _panel_raw is None:
-            _panel_raw = (
-                pygame.image
-                      .load("resources/images/grid_panel.png")
-                      .convert_alpha()
-            )
-        # compute padded panel size = grid_px + 2*margin
-        grid_px = Config.GRID_SIZE * Config.CELL_SIZE
-        # same margin factor used in placing_render
-        margin = int(1.9 * Config.CELL_SIZE)
-        padded = grid_px + 2 * margin
+            _panel_raw = pygame.image.load("resources/images/grid_panel.png").convert_alpha()
         self.panel  = pygame.transform.smoothscale(_panel_raw, (padded, padded))
         self.margin = margin
     def draw(self, screen, state):
@@ -49,31 +47,33 @@ class PlayingRender:
         # Two hidden boards
          # --- LEFT: Player 1’s board (ships hidden) ---
         # blit grid‐panel behind it
-        left_x = Config.BOARD_OFFSET_X - self.margin
-        top_y  = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT - self.margin
+        left_x = Config.PLAY_BOARD_OFFSET_X - self.margin
+        top_y  = Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT - self.margin
         screen.blit(self.panel, (left_x, top_y))
         draw_grid(
             screen,
             state.pass_play_boards[0],
-            Config.BOARD_OFFSET_X,
-            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
-            show_ships=False
+            Config.PLAY_BOARD_OFFSET_X,
+            Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False,
+            cell_size=self.cell_size
         )
-        # --- RIGHT: Player 2’s board (ships hidden) ---
-        right_x = Config.ENEMY_OFFSET_X - self.margin
+
+        # RIGHT board…
+        right_x = Config.PLAY_ENEMY_OFFSET_X - self.margin
         screen.blit(self.panel, (right_x, top_y))
         draw_grid(
             screen,
             state.pass_play_boards[1],
-            Config.ENEMY_OFFSET_X,
-            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
-            show_ships=False
+            Config.PLAY_ENEMY_OFFSET_X,
+            Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False,
+            cell_size=self.cell_size
         )
-
         # Player names + scores
-        label_y   = Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT
-        cx1 = Config.BOARD_OFFSET_X + Config.GRID_WIDTH // 2
-        cx2 = Config.ENEMY_OFFSET_X + Config.GRID_WIDTH // 2
+        label_y   = Config.PLAY_BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT
+        cx1 = Config.PLAY_BOARD_OFFSET_X + Config.GRID_WIDTH // 2
+        cx2 = Config.PLAY_ENEMY_OFFSET_X + Config.GRID_WIDTH // 2
         draw_text_center(screen,
                          f"Player 1   Score: {state.pass_play_score[0]}",
                          cx1, label_y, font_size=28)
@@ -83,8 +83,8 @@ class PlayingRender:
 
         # Reveal sunk ships
         for idx, (ships, offx) in enumerate([
-            (state.pass_play_placed_ships[0], Config.BOARD_OFFSET_X),
-            (state.pass_play_placed_ships[1], Config.ENEMY_OFFSET_X)
+            (state.pass_play_placed_ships[0], Config.PLAY_BOARD_OFFSET_X),
+            (state.pass_play_placed_ships[1], Config.PLAY_ENEMY_OFFSET_X)
         ]):
             board = state.pass_play_boards[idx]
             for coords in ships:
@@ -94,11 +94,15 @@ class PlayingRender:
                     c0 = min(c for _, c in coords)
                     horiz = len({r for r, _ in coords}) == 1
                     ship = DraggableShip(size, 0, 0)
-                    if not horiz:
-                        ship.rotate()
-                    x = offx + c0 * Config.CELL_SIZE
-                    y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + r0 * Config.CELL_SIZE
-                    screen.blit(ship.image, (x, y))
+                    if not horiz: ship.rotate()
+                    # compute new pixel dims
+                    w = size * self.cell_size if horiz else self.cell_size
+                    h = self.cell_size       if horiz else size * self.cell_size
+                    img_scaled = pygame.transform.smoothscale(ship.image, (w, h))
+                    screen.blit(img_scaled, ( 
+    (offx + c0 * self.cell_size),
+    (Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + r0 * self.cell_size)
+))
 
     def _draw_standard(self, screen, state):
         # Score & timer
@@ -109,25 +113,27 @@ class PlayingRender:
                          font_size=24)
         # Attack grid + own fleet
         # --- draw “Enemy Waters” attack grid with background panel ---
-        top_y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT - self.margin
-        ex = Config.ENEMY_OFFSET_X - self.margin
+        top_y = Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT - self.margin
+        ex = Config.PLAY_ENEMY_OFFSET_X - self.margin
         screen.blit(self.panel, (ex, top_y))
         draw_grid(
             screen,
             state.player_attacks,
-            Config.ENEMY_OFFSET_X,
-            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
-            show_ships=False
+            Config.PLAY_ENEMY_OFFSET_X,
+            Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False,
+            cell_size=self.cell_size
         )
         # --- draw “Your Fleet” board with the same panel behind it ---
-        bx = Config.BOARD_OFFSET_X - self.margin
+        bx = Config.PLAY_BOARD_OFFSET_X - self.margin
         screen.blit(self.panel, (bx, top_y))
         draw_grid(
             screen,
             state.player_board,
-            Config.BOARD_OFFSET_X,
-            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
-            show_ships=False
+            Config.PLAY_BOARD_OFFSET_X,
+            Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False,
+            cell_size=self.cell_size
         )
 
         # Reveal sunk ships on computer board
@@ -152,28 +158,46 @@ class PlayingRender:
             self._draw_endgame(screen, msg)
         else:
             # Show labels
-            draw_text_center(screen, "Your Fleet",
-                             Config.BOARD_OFFSET_X + Config.GRID_WIDTH//2,
-                             Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT)
-            draw_text_center(screen, "Enemy Waters",
-                             Config.ENEMY_OFFSET_X + Config.GRID_WIDTH//2,
-                             Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT)
+            draw_text_center(
+            screen,
+            "Your Fleet",
+            Config.PLAY_BOARD_OFFSET_X + Config.PLAYING_GRID_WIDTH // 2,
+            Config.PLAY_BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT,
+            )
+            draw_text_center(
+                screen,
+                "Enemy Waters",
+                Config.PLAY_ENEMY_OFFSET_X + Config.PLAYING_GRID_WIDTH // 2,
+                Config.PLAY_BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT,
+            )
             # Overlay placed ships & markers
             for ship in state.placed_ships:
-                r0 = min(r for r, c in ship.coords)
-                c0 = min(c for r, c in ship.coords)
-                x = Config.BOARD_OFFSET_X + c0 * Config.CELL_SIZE
-                y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + r0 * Config.CELL_SIZE
-                screen.blit(ship.image, (x, y))
+            # 1) top-left grid cell of this ship
+                coords = ship.coords
+                r0, c0 = min(coords, key=lambda rc: (rc[0], rc[1]))
+                size    = len(coords)
+
+                # 2) horizontal if all in same row
+                horiz = all(r == coords[0][0] for r, _ in coords)
+
+                # 3) compute scaled pixel dims
+                w = size * self.cell_size if horiz else self.cell_size
+                h = self.cell_size       if horiz else size * self.cell_size
+
+                # 4) scale the sprite into those smaller cells
+                img_scaled = pygame.transform.smoothscale(ship.image, (w, h))
+
+                # 5) blit at the 90%-sized grid position
+                x = Config.PLAY_BOARD_OFFSET_X + c0 * self.cell_size
+                y = Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + r0 * self.cell_size
+                screen.blit(img_scaled, (x, y))
+                
             for r in range(Config.GRID_SIZE):
                 for c in range(Config.GRID_SIZE):
-                    px = Config.BOARD_OFFSET_X + c*Config.CELL_SIZE + Config.CELL_SIZE//2
-                    py = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + r*Config.CELL_SIZE + Config.CELL_SIZE//2
-                    cell = state.player_board[r][c]
-                    if cell == Cell.MISS:
-                        pygame.draw.circle(screen, Config.BLUE, (px, py), 5)
-                    elif cell == Cell.HIT:
-                        draw_x(screen, px, py, Config.CELL_SIZE)
+                    if state.player_board[r][c] == Cell.HIT:
+                        px = Config.PLAY_BOARD_OFFSET_X + c*self.cell_size + self.cell_size//2
+                        py = Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + r*self.cell_size + self.cell_size//2
+                        draw_x(screen, px, py, self.cell_size)
 
     def _reveal_sunk_standard(self, screen, state):
         rows = cols = Config.GRID_SIZE
@@ -215,13 +239,27 @@ class PlayingRender:
                         or (rows_hit[-1]+1 < rows and state.computer_board[rows_hit[-1]+1][c0] == Cell.SHIP)):
                             continue
 
+                    # top‐left cell of the sunk ship cluster
                     min_r = min(r0 for r0,_ in cluster)
                     min_c = min(c0 for _,c0 in cluster)
-                    ship = DraggableShip(size,0,0)
-                    if not horiz: ship.rotate()
-                    x = Config.ENEMY_OFFSET_X + min_c*Config.CELL_SIZE
-                    y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + min_r*Config.CELL_SIZE
-                    screen.blit(ship.image, (x,y))
+
+                    # build & orient the sprite
+                    ship = DraggableShip(size, 0, 0)
+                    if not horiz:
+                        ship.rotate()
+
+                    # ── compute scaled width/height for the smaller grid ──
+                    w = size * self.cell_size if horiz else self.cell_size
+                    h = self.cell_size       if horiz else size * self.cell_size
+                    img_scaled = pygame.transform.smoothscale(ship.image, (w, h))
+
+                    # ── pick the enemy‐board offset for the shrunken grid ──
+                    offx = Config.PLAY_ENEMY_OFFSET_X
+
+                    # ── pixel-perfect position in the 90%-sized cells ──
+                    x = offx + min_c * self.cell_size
+                    y = Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + min_r * self.cell_size
+                    screen.blit(img_scaled, (x, y))
 
     def _draw_endgame(self, screen, msg):
         draw_text_center(screen, msg, Config.WIDTH//2, Config.HEIGHT//2 - 50)
@@ -232,30 +270,34 @@ class PlayingRender:
 
     def _draw_effects(self, screen, state):
         now = pygame.time.get_ticks()
-        # explosions
+
+        # ─── Explosions ─────────────────────────────────────────
         for exp in state.explosions[:]:
             elapsed = now - exp["time"]
-            offx = Config.BOARD_OFFSET_X if exp["board_idx"]==0 else Config.ENEMY_OFFSET_X
-            x = offx + exp["col"]*Config.CELL_SIZE
-            y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + exp["row"]*Config.CELL_SIZE
+            offx = Config.PLAY_BOARD_OFFSET_X if exp["board_idx"]==0 else Config.PLAY_ENEMY_OFFSET_X
+            x = offx + exp["col"] * self.cell_size
+            y = Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + exp["row"] * self.cell_size
+
             if elapsed < Config.EXPLOSION_FADE_DURATION:
-                img = Config.EXPLOSION_IMG.copy()
-                alpha = int(255*(1 - elapsed/Config.EXPLOSION_FADE_DURATION))
+                img   = Config.EXPLOSION_IMG.copy()
+                alpha = int(255 * (1 - elapsed/Config.EXPLOSION_FADE_DURATION))
                 img.set_alpha(alpha)
-                screen.blit(img, (x,y))
+                screen.blit(img, (x, y))
             else:
-                draw_x(screen, x, y, Config.CELL_SIZE)
+                # **Drop the draw_x call** (we’ll get it for free in draw_grid) :contentReference[oaicite:2]{index=2}:contentReference[oaicite:3]{index=3}
                 state.explosions.remove(exp)
-        # miss splashes (identical pattern)
+
+        # ─── Miss splashes ───────────────────────────────────────
         for ms in state.miss_splashes[:]:
             elapsed = now - ms["time"]
-            offx = Config.BOARD_OFFSET_X if ms["board_idx"]==0 else Config.ENEMY_OFFSET_X
-            x = offx + ms["col"]*Config.CELL_SIZE
-            y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + ms["row"]*Config.CELL_SIZE
+            offx = Config.PLAY_BOARD_OFFSET_X if ms["board_idx"]==0 else Config.PLAY_ENEMY_OFFSET_X
+            x = offx + ms["col"] * self.cell_size
+            y = Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + ms["row"] * self.cell_size
+
             if elapsed < Config.MISS_FADE_DURATION:
-                img = Config.MISS_IMG.copy()
-                alpha = int(255*(1 - elapsed/Config.MISS_FADE_DURATION))
+                img   = Config.MISS_IMG.copy()
+                alpha = int(255 * (1 - elapsed/Config.MISS_FADE_DURATION))
                 img.set_alpha(alpha)
-                screen.blit(img, (x,y))
+                screen.blit(img, (x, y))
             else:
                 state.miss_splashes.remove(ms)

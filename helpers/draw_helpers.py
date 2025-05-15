@@ -87,19 +87,22 @@ def _cell_color(cell: Cell, show_ships: bool):
         return Config.BLUE
     return None
 
-def draw_grid(screen, board, offset_x, offset_y, show_ships=False):
+def draw_grid(screen, board, offset_x, offset_y, show_ships=False, cell_size=None):
+    # allow custom grid cell size, defaulting to Config.CELL_SIZE
+    size = cell_size or Config.CELL_SIZE
+
     for row in range(Config.GRID_SIZE):
         for col in range(Config.GRID_SIZE):
-            x = offset_x + col * Config.CELL_SIZE
-            y = offset_y + row * Config.CELL_SIZE
-            rect = pygame.Rect(x, y, Config.CELL_SIZE, Config.CELL_SIZE)
+            x = offset_x + col * size
+            y = offset_y + row * size
+            rect = pygame.Rect(x, y, size, size)
             pygame.draw.rect(screen, Config.WHITE, rect, 1)
 
             cell = board[row][col]
             color = _cell_color(cell, show_ships)
             if color:
                 if cell == Cell.MISS:
-                    pygame.draw.circle(screen, color, rect.center, Config.CELL_SIZE // 6)
+                    pygame.draw.circle(screen, color, rect.center, size // 6)
                 elif cell == Cell.HIT:
                     pygame.draw.line(screen, color, rect.topleft, rect.bottomright, 2)
                     pygame.draw.line(screen, color, rect.topright, rect.bottomleft, 2)

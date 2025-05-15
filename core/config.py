@@ -10,6 +10,8 @@ class Config:
     DEFAULT_GRID_SIZE     = 10
     GRID_SIZE             = DEFAULT_GRID_SIZE
 
+    PLAYING_BOARD_SCALE   = 0.9   # 90% of placement-screen size
+
     # ─── Ship Sizes (auto-filled) ───
     SHIP_SIZES            = []  # populated by generate_ships_for_grid()
 
@@ -64,6 +66,12 @@ class Config:
 
     FPS = 60
 
+    PLAYING_CELL_SIZE      = None
+    PLAYING_GRID_WIDTH     = None
+    PLAY_BOARD_OFFSET_X    = None
+    PLAY_ENEMY_OFFSET_X    = None
+    PLAY_BOARD_OFFSET_Y    = None
+
     @staticmethod
     def generate_ships_for_grid():
         """Populate Config.SHIP_SIZES based on grid size or smart toggle."""
@@ -88,15 +96,27 @@ class Config:
          • Recompute CELL_SIZE, GRID_WIDTH
          • Recompute board offsets
          • Regenerate SHIP_SIZES
+         • Also compute scaled sizes for playing screens
         """
         padding = 3
         max_w   = Config.WIDTH  // (2 * Config.GRID_SIZE + padding)
         max_h   = Config.HEIGHT // (Config.GRID_SIZE + 4)
         raw_cs  = min(max_w, max_h)
+
+        # base cell for placement & menu
         Config.CELL_SIZE      = max(20, min(raw_cs, 60))
         Config.GRID_WIDTH     = Config.CELL_SIZE * Config.GRID_SIZE
         Config.BOARD_OFFSET_X = (Config.WIDTH - (2 * Config.GRID_WIDTH + Config.SPACE_BETWEEN)) // 2
         Config.ENEMY_OFFSET_X = Config.BOARD_OFFSET_X + Config.GRID_WIDTH + Config.SPACE_BETWEEN
         Config.BOARD_OFFSET_Y = (Config.HEIGHT - Config.GRID_WIDTH) // 2
+
+        # ─── NEW: compute playing-screen sizes ───
+        Config.PLAYING_CELL_SIZE = int(Config.CELL_SIZE * Config.PLAYING_BOARD_SCALE)
+        Config.PLAYING_GRID_WIDTH = Config.PLAYING_CELL_SIZE * Config.GRID_SIZE
+
+        diff = (Config.GRID_WIDTH - Config.PLAYING_GRID_WIDTH) // 2
+        Config.PLAY_BOARD_OFFSET_X  = Config.BOARD_OFFSET_X + diff
+        Config.PLAY_ENEMY_OFFSET_X  = Config.ENEMY_OFFSET_X + diff
+        Config.PLAY_BOARD_OFFSET_Y  = Config.BOARD_OFFSET_Y + diff
 
         Config.generate_ships_for_grid()

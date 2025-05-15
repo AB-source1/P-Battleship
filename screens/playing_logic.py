@@ -56,8 +56,9 @@ class PlayingLogic:
             #    player 0 attacks on the right grid, player 1 on the left
             row, col = get_grid_pos(
                 event.pos,
-                Config.ENEMY_OFFSET_X if p == 0 else Config.BOARD_OFFSET_X,
-                Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT
+                Config.PLAY_ENEMY_OFFSET_X if p==0 else Config.PLAY_BOARD_OFFSET_X,
+                Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+                cell_size=Config.PLAYING_CELL_SIZE
             )
             if row is None:
                 return
@@ -134,8 +135,9 @@ class PlayingLogic:
 
         row, col = get_grid_pos(
             event.pos,
-            Config.ENEMY_OFFSET_X,
-            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT
+            Config.PLAY_ENEMY_OFFSET_X,
+            Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            cell_size=Config.PLAYING_CELL_SIZE
         )
         if row is None or col is None:
             return
@@ -305,17 +307,34 @@ class PlayingLogic:
 
     def _apply_shot_result(self, r: int, c: int, hit: bool, seed_next: bool) -> None:
         """
-        Mark result on player board for AI shots.
+        Mark result on player board for AI shots, and also
+        spawn the fading animation so the player sees it.
         """
+        # 1) Update the board state
         if hit:
             self.state.player_board[r][c] = Cell.HIT
-            self.state.player_ships -= 1
-            self.state.last_player_hit = (r, c)
+            self.state.player_ships    -= 1
+            self.state.last_player_hit  = (r, c)
             if seed_next:
                 self._enqueue_adjacent(r, c)
         else:
             self.state.player_board[r][c] = Cell.MISS
 
+        # 2) **Spawn the same fading explosion/splash effect** 
+        #    that handle_fire uses for the player's shots :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}.
+        now = pygame.time.get_ticks()
+        # board_idx=0 → left grid (your fleet), same as in draw_effects
+        anim = {
+            "row":       r,
+            "col":       c,
+            "time":      now,
+            "board_idx": 0,
+        }
+        if hit:
+            self.state.explosions.append(anim)
+        else:
+            self.state.miss_splashes.append(anim)
+            
     def _enqueue_adjacent(self, r: int, c: int) -> None:
         """
         Queue orthogonal neighbors for hunt mode.

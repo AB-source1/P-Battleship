@@ -31,11 +31,11 @@ def place_ship_randomly(board, size):
                     board[row + i][col] = Cell.SHIP
                 break
 
-def get_grid_pos(mouse_pos, offset_x, offset_y):
-    """Convert pixel position to grid (row, col) based on offsets."""
+def get_grid_pos(mouse_pos, offset_x, offset_y, cell_size=None):
+    cs = cell_size or Config.CELL_SIZE
     mx, my = mouse_pos
-    col = (mx - offset_x) // Config.CELL_SIZE
-    row = (my - offset_y) // Config.CELL_SIZE
+    col = (mx - offset_x) // cs
+    row = (my - offset_y) // cs
     if 0 <= row < Config.GRID_SIZE and 0 <= col < Config.GRID_SIZE:
         return row, col
     return None, None
