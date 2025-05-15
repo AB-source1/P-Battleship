@@ -342,8 +342,12 @@ class PlayingLogic:
         }
         if hit:
             self.state.explosions.append(anim)
+            # ─── Play AI hit sound effect ─────────────────────
+            self.hit_sfx.play()
         else:
             self.state.miss_splashes.append(anim)
+            # ─── Play AI miss sound effect ────────────────────
+            self.miss_sfx.play()
             
     def _enqueue_adjacent(self, r: int, c: int) -> None:
         """
@@ -493,6 +497,7 @@ class PlayingLogic:
                 "time":      now,
                 "board_idx": 1
             })
+            self.hit_sfx.play()
         else:
             state.miss_splashes.append({
                 "row":       row,
@@ -500,6 +505,7 @@ class PlayingLogic:
                 "time":      now,
                 "board_idx": 1
             })
+            self.miss_sfx.play()
         
 
         # 3) Update hit count & remaining ships
