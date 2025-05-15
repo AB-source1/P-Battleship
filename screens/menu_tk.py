@@ -31,7 +31,6 @@ class MenuTk:
         btn_info = [
             ("Play",           self._handle_play,         "#1aae00"),
             ("Settings",       self._handle_settings,     "#555555"),
-            ("Multiplayer",    self._handle_multiplayer,  "#0066cc"),
             ("Pass and Play",  self._handle_pass_and_play,"#1aae00"),
             ("Quit",           self._handle_quit,         "#cc0000"),
         ]
@@ -129,8 +128,6 @@ class MenuTk:
         self.on_play(); self.root.destroy()
     def _handle_settings(self):
         self.on_settings(); self.root.destroy()
-    def _handle_multiplayer(self):
-        self.on_multiplayer(); self.root.destroy()
     def _handle_pass_and_play(self):
         self.on_pass_and_play(); self.root.destroy()
     def _handle_quit(self):
