@@ -104,24 +104,34 @@ class MenuTk:
         self._update_all_fonts()
 
     def _update_all_fonts(self):
-        win_h = self.root.winfo_height()
-        # base size from height
-        base_size = max(8, int(win_h * 0.06))
+         # 1) Start at a base size (6% of height), down to a min of 8px
+        height = self.root.winfo_height()
+        max_size = int(height * 0.06)
+        max_size = max(8, max_size)
 
+        # 2) Find the largest size that fits *every* button
+        for test_size in range(max_size, 7, -1):
+            f = tkFont.Font(family="Helvetica", size=test_size, weight="bold")
+            fits_all = True
+            for btn in self.buttons:
+                btn.update_idletasks()
+                btn_w = btn.winfo_width()
+                txt   = btn.cget("text")
+                # if any label is too wide, this size doesn't work
+                if f.measure(txt) > btn_w - 10:
+                    fits_all = False
+                    break
+            if fits_all:
+                # this test_size works for everyone
+                final_font = f
+                break
+        else:
+            # fallback to minimum
+            final_font = tkFont.Font(family="Helvetica", size=8, weight="bold")
+
+        # 3) Apply that same font to all buttons
         for btn in self.buttons:
-            # determine actual button width in pixels
-            btn.update_idletasks()
-            btn_w = btn.winfo_width()
-
-            # start with a font of size=base_size
-            f = tkFont.Font(family="Helvetica", size=base_size, weight="bold")
-            txt = btn.cget("text")
-
-            # shrink until it fits within btn_w - padding
-            while f.measure(txt) > btn_w - 10 and f.cget("size") > 8:
-                f.configure(size=f.cget("size") - 1)
-
-            btn.config(font=f)
+            btn.config(font=final_font)
 
     # handlers for user actions
     def _handle_play(self):

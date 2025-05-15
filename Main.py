@@ -60,7 +60,7 @@ def run_game(initial_state="menu"):
     VW, VH = Config.WIDTH, Config.HEIGHT
     canvas = pygame.Surface((VW, VH))
     screen = pygame.display.set_mode((VW, VH), pygame.RESIZABLE)
-    pygame.display.set_caption("P-Battleship")
+    pygame.display.set_caption("Battleship")
 
      # ─── Load & start background music ─────────────────────────
     bgm_path = "resources/music/background_music.mp3"
