@@ -126,7 +126,7 @@ def run_game(initial_state="menu"):
         state.waiting_for_sync = False
         state.opponent_left    = False
 
-    prev_scene = state.game_state
+   
     clock = pygame.time.Clock()
     
     if state.game_state == "placing_multi":
@@ -143,7 +143,7 @@ def run_game(initial_state="menu"):
         # 4) Switch to the placement screen
         state.game_state       = "placing"
 
-
+    prev_scene = state.game_state
 
     # ─── Main Loop ────────────────────────────────────────────────────────────────
     while state.running:

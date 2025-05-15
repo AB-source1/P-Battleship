@@ -106,21 +106,24 @@ class StatsRender:
 
         # Action buttons: Play Again and Main Menu
         btn_y = Config.HEIGHT - 100
-        draw_button(
-            screen,
-            "Play Again",
-            Config.WIDTH // 2 - 180,
-            btn_y,
-            160,
-            50,
-            Config.GREEN,
-            Config.DARK_GREEN,
-            self.logic.play_again,3
-        )
+        btn_x = Config.WIDTH // 2 - 80
+        if not state.pass_play_mode:
+            draw_button(
+                screen,
+                "Play Again",
+                Config.WIDTH // 2 - 180,
+                btn_y,
+                160,
+                50,
+                Config.GREEN,
+                Config.DARK_GREEN,
+                self.logic.play_again,3
+            )
+            btn_x = Config.WIDTH // 2 + 20
         draw_button(
             screen,
             "Main Menu",
-            Config.WIDTH // 2 + 20,
+            btn_x,
             btn_y,
             160,
             50,
