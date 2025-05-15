@@ -1,153 +1,122 @@
+# screens/menu_tk.py
+
 import tkinter as tk
 from PIL import Image, ImageTk
 from core.config import Config
 import tkinter.font as tkFont
 
 class MenuTk:
-    def __init__(self, on_play, on_settings, on_multiplayer, on_pass_and_play, on_quit):
+    def __init__(self, state, on_play, on_settings, on_multiplayer, on_pass_and_play, on_quit):
+        self.state = state
+
+        # Build & center root
         self.root = tk.Tk()
         self.root.title("Battleships")
-        self.root.geometry(f"{Config.WIDTH}x{Config.HEIGHT}")
-        self.root.minsize(400, 300)
+        sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        x = (sw - Config.WIDTH)//2
+        y = (sh - Config.HEIGHT)//2
+        self.root.geometry(f"{Config.WIDTH}x{Config.HEIGHT}+{x}+{y}")
+        self.root.minsize(400,300)
         self.root.configure(bg="black")
 
-        screen_w = self.root.winfo_screenwidth()
-        screen_h = self.root.winfo_screenheight()
-        x = (screen_w  - Config.WIDTH)  // 2
-        y = (screen_h - Config.HEIGHT) // 2
-        self.root.geometry(f"{Config.WIDTH}x{Config.HEIGHT}+{x}+{y}")
-
+        # Canvas + background
         self.canvas = tk.Canvas(self.root, bg="black", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
+        bg = Image.open("resources/images/cartoon_loading.png")
+        self.orig_bg = bg
+        self.bg_img = ImageTk.PhotoImage(bg.resize((Config.WIDTH, Config.HEIGHT), Image.LANCZOS))
+        self.bg_id  = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_img)
+        self.canvas.image = self.bg_img  # hold reference
 
-        self.original_bg = Image.open("resources/images/cartoon_loading.png")
-        self.bg_image = ImageTk.PhotoImage(self.original_bg.resize((Config.WIDTH, Config.HEIGHT), Image.LANCZOS))
-        self.canvas_bg = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
+        # Callbacks
+        self.on_play          = on_play
+        self.on_settings      = on_settings
+        self.on_multiplayer   = on_multiplayer
+        self.on_pass_and_play = on_pass_and_play
+        self.on_quit          = on_quit
 
-        self.resize_after_id = None
-
-        # user callbacks
-        self.on_play            = on_play
-        self.on_settings        = on_settings
-        self.on_multiplayer     = on_multiplayer
-        self.on_pass_and_play   = on_pass_and_play
-        self.on_quit            = on_quit
-
-        # button specs
-        btn_info = [
-            ("Play",           self._handle_play,         "#1aae00"),
-            ("Settings",       self._handle_settings,     "#555555"),
-            ("Pass and Play",  self._handle_pass_and_play,"#1aae00"),
-            ("Quit",           self._handle_quit,         "#cc0000"),
-        ]
-
+        # Buttons
         self.buttons = []
-        relx = 0.15
-        rely_start = 0.30
-        btn_relwidth = 0.20
-        btn_relheight = 0.08
-        v_spacing = btn_relheight + 0.02
-
-        for idx, (txt, handler, color) in enumerate(btn_info):
-            btn = tk.Button(
+        btn_info = [
+            ("Play",          self._handle_play,         Config.GREEN),
+            ("Settings",      self._handle_settings,     Config.GRAY),
+            ("Multiplayer",   self._handle_multiplayer,  Config.BLUE),
+            ("Pass & Play",   self._handle_pass_and_play,Config.GREEN),
+            ("Quit",          self._handle_quit,         Config.RED)
+        ]
+        for text, handler, color in btn_info:
+            b = tk.Button(
                 self.root,
-                text=txt,
+                text=text,
                 fg="white",
-                bg=color,
-                activebackground=color,
+                bg=self._hex(color),
+                activebackground=self._hex(color),
                 bd=2,
                 relief="raised",
                 highlightthickness=0,
                 command=lambda cb=handler: self._on_button(cb)
             )
-            btn.place(
-                relx=relx,
-                rely=rely_start + idx * v_spacing,
-                relwidth=btn_relwidth,
-                relheight=btn_relheight
-            )
-            self.buttons.append(btn)
+            self.buttons.append(b)
 
-        # Initial sizing
-        self._update_all_fonts()
+        # Place buttons
+        relx, rely = 0.15, 0.30
+        relw, relh = 0.20, 0.08
+        spacing = relh + 0.02
+        for i, btn in enumerate(self.buttons):
+            btn.place(relx=relx, rely=rely + i*spacing, relwidth=relw, relheight=relh)
 
-        # bind resize + fullscreen toggle
-        self.root.bind("<Configure>", self._debounced_resize)
-        self.root.bind("<F11>", self._toggle_fullscreen)
-        self.root.bind("<Escape>", self._exit_fullscreen)
-        self.is_fullscreen = False
+        # Resize handling
+        self.resize_job = None
+        self.root.bind("<Configure>", self._debounce_resize)
+        self.root.bind("<Escape>", lambda e: self._on_button(self._handle_quit))
+
+        # Initial font scaling
+        self._rescale()
+
+    def _hex(self, rgb):
+        return "#{:02x}{:02x}{:02x}".format(*rgb)
 
     def _on_button(self, callback):
-        self.root.destroy()
+        # 1) Destroy **first** so callback never sees a dead window
+        try:
+            self.root.destroy()
+        except tk.TclError:
+            pass
+        # 2) Then invoke the action
         callback()
 
-    def _toggle_fullscreen(self, e=None):
-        self.is_fullscreen = not self.is_fullscreen
-        self.root.attributes("-fullscreen", self.is_fullscreen)
+    # — handler stubs just call your callbacks, no destroy here —
+    def _handle_play(self):          self.on_play()
+    def _handle_settings(self):      self.on_settings()
+    def _handle_multiplayer(self):   self.on_multiplayer()
+    def _handle_pass_and_play(self): self.on_pass_and_play()
+    def _handle_quit(self):          self.on_quit()
 
-    def _exit_fullscreen(self, e=None):
-        self.is_fullscreen = False
-        self.root.attributes("-fullscreen", False)
+    def _debounce_resize(self, event):
+        if self.resize_job:
+            self.root.after_cancel(self.resize_job)
+        self.resize_job = self.root.after(100, self._rescale)
 
-    def _debounced_resize(self, event):
-        if self.resize_after_id:
-            self.root.after_cancel(self.resize_after_id)
-        self.resize_after_id = self.root.after(150, self._on_resize)
-
-    def _on_resize(self):
-        w = self.root.winfo_width()
-        h = self.root.winfo_height()
-        if w < 100 or h < 100:
-            return
-
-        # resize background
-        resized = self.original_bg.resize((w, h), Image.LANCZOS)
-        self.bg_image = ImageTk.PhotoImage(resized)
-        self.canvas.itemconfig(self.canvas_bg, image=self.bg_image)
+    def _rescale(self):
+        # 1) resize bg
+        w,h = self.root.winfo_width(), self.root.winfo_height()
+        if w<100 or h<100: return
+        bg = self.orig_bg.resize((w,h), Image.LANCZOS)
+        self.bg_img = ImageTk.PhotoImage(bg)
+        self.canvas.itemconfig(self.bg_id, image=self.bg_img)
         self.canvas.config(width=w, height=h)
+        self.canvas.image = self.bg_img
 
-        # adjust fonts on buttons
-        self._update_all_fonts()
+        # 2) uniform font
+        max_sz = max(8, int(h * 0.06))
+        font = tkFont.Font(family="Helvetica", size=max_sz, weight="bold")
+        longest = max(b.cget("text") for b in self.buttons)
+        while font.measure(longest) > w*0.8 and font.cget("size") > 8:
+            font.configure(size=font.cget("size") - 1)
 
-    def _update_all_fonts(self):
-         # 1) Start at a base size (6% of height), down to a min of 8px
-        height = self.root.winfo_height()
-        max_size = int(height * 0.06)
-        max_size = max(8, max_size)
-
-        # 2) Find the largest size that fits *every* button
-        for test_size in range(max_size, 7, -1):
-            f = tkFont.Font(family="Helvetica", size=test_size, weight="bold")
-            fits_all = True
-            for btn in self.buttons:
-                btn.update_idletasks()
-                btn_w = btn.winfo_width()
-                txt   = btn.cget("text")
-                # if any label is too wide, this size doesn't work
-                if f.measure(txt) > btn_w - 10:
-                    fits_all = False
-                    break
-            if fits_all:
-                # this test_size works for everyone
-                final_font = f
-                break
-        else:
-            # fallback to minimum
-            final_font = tkFont.Font(family="Helvetica", size=8, weight="bold")
-
-        # 3) Apply that same font to all buttons
+        # 3) apply to all
         for btn in self.buttons:
-            btn.config(font=final_font)
-
-    # handlers for user actions
-    def _handle_play(self):
-        self.on_play(); self.root.destroy()
-    def _handle_settings(self):
-        self.on_settings(); self.root.destroy()
-    def _handle_pass_and_play(self):
-        self.on_pass_and_play(); self.root.destroy()
-    def _handle_quit(self):
-        self.on_quit(); self.root.destroy()
+            btn.config(font=(font.actual("family"), font.cget("size"), "bold"))
 
     def run(self):
         self.root.mainloop()

@@ -8,6 +8,7 @@ from core.game_state        import GameState
 
 from screens.settings_logic import SettingsLogic
 from screens.settings_render import SettingsRender
+from screens.settings_tk import SettingsTk
 from screens.lobby_logic    import LobbyLogic
 from screens.lobby_render   import LobbyRender
 from screens.placing_logic  import PlacingLogic
@@ -20,22 +21,22 @@ from helpers.draw_helpers   import draw_modal,draw_button,draw_text_center
 from game.board_helpers     import create_board
 from screens.menu_tk import MenuTk  
 
-def show_tk_menu():
+def show_tk_menu(state=None):
     def start_play():
         # Ship placement screen
-        run_game(initial_state="placing")
+        run_game(initial_state="placing",state=state)
 
     def open_settings():
         # Settings screen
-        run_game(initial_state="settings")
+        run_game(initial_state="settings",state=state)
 
     def start_multiplayer():
         # Networked lobby screen
-        run_game(initial_state="lobby")
+        run_game(initial_state="lobby",state=state)
 
     def start_pass_and_play():
         # Local hot-seat placement
-        run_game(initial_state="placing_multi")
+        run_game(initial_state="placing_multi",state=state)
 
     def quit_app():
         # Exit the whole application
@@ -44,6 +45,7 @@ def show_tk_menu():
 
     # — Instantiate your Tk menu, giving it exactly those callbacks —
     menu = MenuTk(
+        state,
         on_play=start_play,
         on_settings=open_settings,
         on_multiplayer=start_multiplayer,
@@ -52,7 +54,7 @@ def show_tk_menu():
     )
     menu.run()
 
-def run_game(initial_state="menu"):
+def run_game(initial_state="menu", state=None):
     # ─── Pygame Initialization ───────────────────────────────────────────────────
     pygame.init()
     pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
@@ -80,7 +82,11 @@ def run_game(initial_state="menu"):
     Config.update_layout()
 
     # ─── GameState & Reset Wiring ────────────────────────────────────────────────
-    state = GameState(lambda: None)
+    # ─── GameState & Reset Wiring ────────────────────────────────────────────────
+    if state is None:
+        # first time through: no state passed in, so create one
+        state = GameState(lambda: None)
+    # remember initial state (menu, settings, etc.)
     state.game_state = initial_state
     placing_logic  = PlacingLogic(screen, state)
     placing_render = PlacingRender(placing_logic)
@@ -151,8 +157,21 @@ def run_game(initial_state="menu"):
         now = pygame.time.get_ticks()
         if state.game_state == "menu":
             pygame.quit()
-            show_tk_menu()
+            show_tk_menu(state)
             return
+        if state.game_state == "settings":
+            # 1) Tear down Pygame entirely
+            pygame.quit()
+            # 2) Launch the standalone Tk Settings window
+            SettingsTk(
+                state,
+                on_back=lambda: None   # we will manually pop back to menu below
+            ).run()
+            # 3) When SettingsTk closes, return to the main Tk menu
+            show_tk_menu(state)
+            return
+            
+           
         # 1) Turn logic first so `my_turn` is updated before click handling
         if state.game_state == "playing":
             if state.network:
@@ -331,5 +350,6 @@ def run_game(initial_state="menu"):
 
 
 if __name__ == "__main__":
-    show_tk_menu()
+    
+    show_tk_menu(None)
 
