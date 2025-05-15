@@ -35,7 +35,7 @@ def show_tk_menu():
 
     def start_pass_and_play():
         # Local hot-seat placement
-        run_game(initial_state="placing")
+        run_game(initial_state="placing_multi")
 
     def quit_app():
         # Exit the whole application
@@ -118,6 +118,22 @@ def run_game(initial_state="menu"):
 
     prev_scene = state.game_state
     clock = pygame.time.Clock()
+    
+    if state.game_state == "placing_multi":
+        state.pass_play_mode   = True
+
+        # 2) We're about to place Player 1 first
+        state.pass_play_stage  = 0
+        state.current_player   = 0
+
+        # 3) Build two fresh boards for ships & two for attacks
+        state.pass_play_boards  = [create_board(), create_board()]
+        state.pass_play_attacks = [create_board(), create_board()]
+
+        # 4) Switch to the placement screen
+        state.game_state       = "placing"
+
+
 
     # ─── Main Loop ────────────────────────────────────────────────────────────────
     while state.running:
