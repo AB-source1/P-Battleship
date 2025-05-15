@@ -5,16 +5,48 @@ from core.config import Config
 class StatsRender:
     def __init__(self, logic):
         self.logic = logic
+        global _stats_panel_raw
+        try:
+            _stats_panel_raw
+        except NameError:
+            _stats_panel_raw = pygame.image.load("resources/images/grid_panel.png").convert_alpha()
+        self.panel_raw = _stats_panel_raw
 
     def draw(self, screen, state):
         # Draw the top bar (title, restart/quit buttons)
         draw_top_bar(screen, state)
 
+        # ─── Draw a scaled frame around the stats area ───────────────────────────
+        # Compute the panel size: leave 50px margin on left/right, top under the bar
+        panel_w = Config.WIDTH  - 100
+        panel_h = Config.HEIGHT - Config.TOP_BAR_HEIGHT + 50
+        panel = pygame.transform.smoothscale(self.panel_raw, (panel_w, panel_h))
+        panel_x = 50
+        panel_y = Config.TOP_BAR_HEIGHT -20
+        screen.blit(panel, (panel_x, panel_y))
+
+        # Now all subsequent text/buttons will render on top of this panel
+
         # ─── PASS & PLAY vs AI/Network split ────────────────────
         if state.pass_play_mode:
-            # We just finished a local 2-player game
+            # Pass & Play banner + per-player scores
             title_y = 120
             draw_text_center(screen, "Pass & Play Results", Config.WIDTH // 2, title_y, 48)
+
+            # Draw each player's total score
+            score_y = title_y + 40
+            draw_text_center(
+                screen,
+                f"Player 1 Score: {state.pass_play_score[0]}",
+                Config.WIDTH // 4, score_y, font_size=28
+            )
+            draw_text_center(
+                screen,
+                f"Player 2 Score: {state.pass_play_score[1]}",
+                Config.WIDTH * 3 // 4, score_y, font_size=28
+            )
+            # Shift down the stats table start
+            stats_start_y = score_y + 50
 
             # Skip the single‐player banner and final‐score
         else:
@@ -80,7 +112,7 @@ class StatsRender:
         # Layout: two columns
         left_x = Config.WIDTH // 4
         right_x = Config.WIDTH * 3 // 4
-        start_y = 200
+        start_y  = locals().get('stats_start_y', 200)
         line_h = 40
 
         # Column headers: always “Player 1” / “Player 2” in Pass&Play,
@@ -106,21 +138,24 @@ class StatsRender:
 
         # Action buttons: Play Again and Main Menu
         btn_y = Config.HEIGHT - 100
-        draw_button(
-            screen,
-            "Play Again",
-            Config.WIDTH // 2 - 180,
-            btn_y,
-            160,
-            50,
-            Config.GREEN,
-            Config.DARK_GREEN,
-            self.logic.play_again,3
-        )
+        btn_x = Config.WIDTH // 2 - 80
+        if not state.pass_play_mode:
+            draw_button(
+                screen,
+                "Play Again",
+                Config.WIDTH // 2 - 180,
+                btn_y,
+                160,
+                50,
+                Config.GREEN,
+                Config.DARK_GREEN,
+                self.logic.play_again,3
+            )
+            btn_x = Config.WIDTH // 2 + 20
         draw_button(
             screen,
             "Main Menu",
-            Config.WIDTH // 2 + 20,
+            btn_x,
             btn_y,
             160,
             50,

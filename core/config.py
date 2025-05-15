@@ -87,7 +87,7 @@ class Config:
             elif Config.GRID_SIZE <= 12:
                 Config.SHIP_SIZES = [5, 4, 3]
             else:
-                Config.SHIP_SIZES = [6, 5, 4, 3]
+                Config.SHIP_SIZES = [ 5, 4, 3, 3]
 
     @staticmethod
     def update_layout():

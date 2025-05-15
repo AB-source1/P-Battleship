@@ -20,17 +20,21 @@ def place_ship_randomly(board, size):
             row = random.randint(0, Config.GRID_SIZE - 1)
             col = random.randint(0, Config.GRID_SIZE - size)
             if all(board[row][col + i] == Cell.EMPTY for i in range(size)):
+                coords = []
                 for i in range(size):
                     board[row][col + i] = Cell.SHIP
-                break
+                    coords.append((row, col + i))
+                return coords
         else:
             row = random.randint(0, Config.GRID_SIZE - size)
             col = random.randint(0, Config.GRID_SIZE - 1)
             if all(board[row + i][col] == Cell.EMPTY for i in range(size)):
+                coords = []
                 for i in range(size):
                     board[row + i][col] = Cell.SHIP
-                break
-
+                    coords.append((row + i, col))
+                return coords
+            
 def get_grid_pos(mouse_pos, offset_x, offset_y, cell_size=None):
     cs = cell_size or Config.CELL_SIZE
     mx, my = mouse_pos

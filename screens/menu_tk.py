@@ -1,140 +1,137 @@
+# screens/menu_tk.py
+
 import tkinter as tk
 from PIL import Image, ImageTk
 from core.config import Config
 import tkinter.font as tkFont
 
+def _hex(rgb_tuple):
+    return "#{:02x}{:02x}{:02x}".format(*rgb_tuple)
+
 class MenuTk:
-    def __init__(self, on_play, on_settings, on_multiplayer, on_pass_and_play, on_quit):
+    def __init__(self, state, on_play, on_settings, on_multiplayer, on_pass_and_play, on_quit):
+        self.state = state
+        self.on_play = on_play
+        self.on_settings = on_settings
+        self.on_multiplayer = on_multiplayer
+        self.on_pass_and_play = on_pass_and_play
+        self.on_quit = on_quit
+
+        # ─── Build & center root ───────────────────────────────
         self.root = tk.Tk()
         self.root.title("Battleships")
-        self.root.geometry(f"{Config.WIDTH}x{Config.HEIGHT}")
+        sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        x = (sw - Config.WIDTH)//2
+        y = (sh - Config.HEIGHT)//2
+        self.root.geometry(f"{Config.WIDTH}x{Config.HEIGHT}+{x}+{y}")
         self.root.minsize(400, 300)
         self.root.configure(bg="black")
 
+        # ─── Canvas + background ───────────────────────────────
         self.canvas = tk.Canvas(self.root, bg="black", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
+        self.orig_bg = Image.open("resources/images/cartoon_loading.png")
+        self._resize_bg(Config.WIDTH, Config.HEIGHT)
 
-        self.original_bg = Image.open("resources/images/cartoon_loading.png")
-        self.bg_image = ImageTk.PhotoImage(self.original_bg.resize((Config.WIDTH, Config.HEIGHT), Image.LANCZOS))
-        self.canvas_bg = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_image)
-
-        self.resize_after_id = None
-
-        # user callbacks
-        self.on_play            = on_play
-        self.on_settings        = on_settings
-        self.on_multiplayer     = on_multiplayer
-        self.on_pass_and_play   = on_pass_and_play
-        self.on_quit            = on_quit
-
-        # button specs
-        btn_info = [
-            ("Play",           self._handle_play,         "#1aae00"),
-            ("Settings",       self._handle_settings,     "#555555"),
-            ("Multiplayer",    self._handle_multiplayer,  "#0066cc"),
-            ("Pass and Play",  self._handle_pass_and_play,"#1aae00"),
-            ("Quit",           self._handle_quit,         "#cc0000"),
-        ]
-
+        # ─── Build buttons ──────────────────────────────────────
         self.buttons = []
-        relx = 0.15
-        rely_start = 0.30
-        btn_relwidth = 0.20
-        btn_relheight = 0.08
-        v_spacing = btn_relheight + 0.02
-
-        for idx, (txt, handler, color) in enumerate(btn_info):
-            btn = tk.Button(
+        btn_info = [
+            ("Play",          self.on_play,         Config.GREEN),
+            ("Settings",      self.on_settings,     Config.GRAY),
+            ("Pass & Play",   self.on_pass_and_play,Config.GREEN),
+            ("Quit",          self.on_quit,         Config.RED),
+        ]
+        for text, handler, color in btn_info:
+            b = tk.Button(
                 self.root,
-                text=txt,
+                text=text,
                 fg="white",
-                bg=color,
-                activebackground=color,
+                bg=_hex(color),
+                activebackground=_hex(color),
                 bd=2,
                 relief="raised",
                 highlightthickness=0,
                 command=lambda cb=handler: self._on_button(cb)
             )
-            btn.place(
-                relx=relx,
-                rely=rely_start + idx * v_spacing,
-                relwidth=btn_relwidth,
-                relheight=btn_relheight
-            )
-            self.buttons.append(btn)
+            self.buttons.append(b)
 
-        # Initial sizing
-        self._update_all_fonts()
+        # ─── Fixed geometry ─────────────────────────────────────
+        self._relx, self._rely = 0.15, 0.30
+        self._relw, self._relh = 0.20, 0.08
+        self._spacing = self._relh + 0.02
 
-        # bind resize + fullscreen toggle
-        self.root.bind("<Configure>", self._debounced_resize)
-        self.root.bind("<F11>", self._toggle_fullscreen)
-        self.root.bind("<Escape>", self._exit_fullscreen)
-        self.is_fullscreen = False
+        # ─── Bind resize ────────────────────────────────────────
+        self.resize_job = None
+        self.root.bind("<Configure>", self._debounce_resize)
+        self.root.bind("<Escape>", lambda e: self._on_button(self.on_quit))
+
+        # ─── Initial layout ────────────────────────────────────
+        self._layout_buttons()
 
     def _on_button(self, callback):
+        # Destroy first so no TclErrors, then run callback
         self.root.destroy()
         callback()
 
-    def _toggle_fullscreen(self, e=None):
-        self.is_fullscreen = not self.is_fullscreen
-        self.root.attributes("-fullscreen", self.is_fullscreen)
+    def _debounce_resize(self, event):
+        if self.resize_job:
+            self.root.after_cancel(self.resize_job)
+        self.resize_job = self.root.after(100, self._layout_buttons)
 
-    def _exit_fullscreen(self, e=None):
-        self.is_fullscreen = False
-        self.root.attributes("-fullscreen", False)
+    def _resize_bg(self, w, h):
+        bg = self.orig_bg.resize((w, h), Image.LANCZOS)
+        self.bg_img = ImageTk.PhotoImage(bg)
+        if hasattr(self, "_bg_id"):
+            self.canvas.itemconfig(self._bg_id, image=self.bg_img)
+        else:
+            self._bg_id = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_img)
+        self.canvas.image = self.bg_img
 
-    def _debounced_resize(self, event):
-        if self.resize_after_id:
-            self.root.after_cancel(self.resize_after_id)
-        self.resize_after_id = self.root.after(150, self._on_resize)
-
-    def _on_resize(self):
-        w = self.root.winfo_width()
-        h = self.root.winfo_height()
+    def _layout_buttons(self):
+        w, h = self.root.winfo_width(), self.root.winfo_height()
         if w < 100 or h < 100:
             return
 
-        # resize background
-        resized = self.original_bg.resize((w, h), Image.LANCZOS)
-        self.bg_image = ImageTk.PhotoImage(resized)
-        self.canvas.itemconfig(self.canvas_bg, image=self.bg_image)
-        self.canvas.config(width=w, height=h)
+        # 1) background
+        self._resize_bg(w, h)
 
-        # adjust fonts on buttons
-        self._update_all_fonts()
+        # 2) compute each button's pixel width
+        btn_px_width = int(self._relw * w)
 
-    def _update_all_fonts(self):
-        win_h = self.root.winfo_height()
-        # base size from height
-        base_size = max(8, int(win_h * 0.06))
+        # 3) find the largest initial font size
+        #    start at 60% of button height, down to min 6px
+        max_font_sz = max(6, int(h * self._relh * 0.6))
+        chosen = 6
+        for sz in range(max_font_sz, 5, -1):
+            f = tkFont.Font(family="Helvetica", size=sz, weight="bold")
+            # check longest label
+            if all(f.measure(b.cget("text")) <= btn_px_width * 0.8 for b in self.buttons):
+                chosen = sz
+                break
 
-        for btn in self.buttons:
-            # determine actual button width in pixels
-            btn.update_idletasks()
-            btn_w = btn.winfo_width()
+        # 4) extra per-button check: some labels may still overflow due to kerning
+        f = tkFont.Font(family="Helvetica", size=chosen, weight="bold")
+        overflow = True
+        while overflow and chosen > 6:
+            overflow = False
+            for btn in self.buttons:
+                if f.measure(btn.cget("text")) > btn_px_width * 0.8:
+                    chosen -= 1
+                    f.configure(size=chosen)
+                    overflow = True
+                    break
 
-            # start with a font of size=base_size
-            f = tkFont.Font(family="Helvetica", size=base_size, weight="bold")
-            txt = btn.cget("text")
+        uniform_font = ("Helvetica", chosen, "bold")
 
-            # shrink until it fits within btn_w - padding
-            while f.measure(txt) > btn_w - 10 and f.cget("size") > 8:
-                f.configure(size=f.cget("size") - 1)
-
-            btn.config(font=f)
-
-    # handlers for user actions
-    def _handle_play(self):
-        self.on_play(); self.root.destroy()
-    def _handle_settings(self):
-        self.on_settings(); self.root.destroy()
-    def _handle_multiplayer(self):
-        self.on_multiplayer(); self.root.destroy()
-    def _handle_pass_and_play(self):
-        self.on_pass_and_play(); self.root.destroy()
-    def _handle_quit(self):
-        self.on_quit(); self.root.destroy()
+        # 5) place buttons
+        for i, btn in enumerate(self.buttons):
+            btn.config(font=uniform_font)
+            btn.place(
+                relx=self._relx,
+                rely=self._rely + i * self._spacing,
+                relwidth=self._relw,
+                relheight=self._relh
+            )
 
     def run(self):
         self.root.mainloop()

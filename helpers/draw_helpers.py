@@ -20,7 +20,7 @@ def draw_top_bar(screen, state):
     )
 
     # Audio Toggle Button
-    audio_label = "Audio: On" if state.audio_enabled else "Audio: Off"
+    audio_label = "Music: On" if state.audio_enabled else "Music: Off"
     draw_button(
         screen, audio_label,
         Config.WIDTH - 220, y, 120, 30,
