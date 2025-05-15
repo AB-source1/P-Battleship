@@ -39,7 +39,7 @@ def draw_top_bar(screen, state):
 
 def toggle_audio(state):
     state.audio_enabled = not state.audio_enabled
-    pygame.mixer.music.set_volume(1 if state.audio_enabled else 0)
+    pygame.mixer.music.set_volume(0.2 if state.audio_enabled else 0)
 
 def draw_button(screen, text, x, y, w, h, color, hover_color, action=None, border=0):
     # 1) get real window mouse pos
