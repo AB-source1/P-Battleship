@@ -7,11 +7,25 @@ from core.config import Config
 from game.draggable_ship import DraggableShip, SHIP_IMAGE_FILES
 from game.board_helpers import Cell
 
-
+_panel_raw = None
 class PlayingRender:
     def __init__(self, logic):
         self.logic = logic
-
+        # load & cache raw grid_panel only once
+        global _panel_raw
+        if _panel_raw is None:
+            _panel_raw = (
+                pygame.image
+                      .load("resources/images/grid_panel.png")
+                      .convert_alpha()
+            )
+        # compute padded panel size = grid_px + 2*margin
+        grid_px = Config.GRID_SIZE * Config.CELL_SIZE
+        # same margin factor used in placing_render
+        margin = int(1.9 * Config.CELL_SIZE)
+        padded = grid_px + 2 * margin
+        self.panel  = pygame.transform.smoothscale(_panel_raw, (padded, padded))
+        self.margin = margin
     def draw(self, screen, state):
         # 1) Always draw top bar
         draw_top_bar(screen, state)
@@ -33,14 +47,28 @@ class PlayingRender:
                          Config.TOP_BAR_HEIGHT + 50)
 
         # Two hidden boards
-        draw_grid(screen, state.pass_play_boards[0],
-                  Config.BOARD_OFFSET_X,
-                  Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
-                  show_ships=False)
-        draw_grid(screen, state.pass_play_boards[1],
-                  Config.ENEMY_OFFSET_X,
-                  Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
-                  show_ships=False)
+         # --- LEFT: Player 1’s board (ships hidden) ---
+        # blit grid‐panel behind it
+        left_x = Config.BOARD_OFFSET_X - self.margin
+        top_y  = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT - self.margin
+        screen.blit(self.panel, (left_x, top_y))
+        draw_grid(
+            screen,
+            state.pass_play_boards[0],
+            Config.BOARD_OFFSET_X,
+            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False
+        )
+        # --- RIGHT: Player 2’s board (ships hidden) ---
+        right_x = Config.ENEMY_OFFSET_X - self.margin
+        screen.blit(self.panel, (right_x, top_y))
+        draw_grid(
+            screen,
+            state.pass_play_boards[1],
+            Config.ENEMY_OFFSET_X,
+            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False
+        )
 
         # Player names + scores
         label_y   = Config.BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT
@@ -80,14 +108,27 @@ class PlayingRender:
                          Config.TOP_BAR_HEIGHT + 20,
                          font_size=24)
         # Attack grid + own fleet
-        draw_grid(screen, state.player_attacks,
-                  Config.ENEMY_OFFSET_X,
-                  Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
-                  show_ships=False)
-        draw_grid(screen, state.player_board,
-                  Config.BOARD_OFFSET_X,
-                  Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
-                  show_ships=False)
+        # --- draw “Enemy Waters” attack grid with background panel ---
+        top_y = Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT - self.margin
+        ex = Config.ENEMY_OFFSET_X - self.margin
+        screen.blit(self.panel, (ex, top_y))
+        draw_grid(
+            screen,
+            state.player_attacks,
+            Config.ENEMY_OFFSET_X,
+            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False
+        )
+        # --- draw “Your Fleet” board with the same panel behind it ---
+        bx = Config.BOARD_OFFSET_X - self.margin
+        screen.blit(self.panel, (bx, top_y))
+        draw_grid(
+            screen,
+            state.player_board,
+            Config.BOARD_OFFSET_X,
+            Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT,
+            show_ships=False
+        )
 
         # Reveal sunk ships on computer board
         self._reveal_sunk_standard(screen, state)
