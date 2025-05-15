@@ -45,82 +45,90 @@ class PlayingLogic:
         """
             # only in Pass&Play, local two‐player mode:
         if state.pass_play_mode:
+            # 1) Only respond to left‐clicks
             if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
                 return
-            # whose turn?
+
+            # 2) Which player is shooting? (0 or 1)
             p = state.current_player
+
+            # 3) Convert mouse→grid for the correct attack grid:
+            #    player 0 attacks on the right grid, player 1 on the left
             row, col = get_grid_pos(
                 event.pos,
-                Config.ENEMY_OFFSET_X if p==0 else Config.BOARD_OFFSET_X,
+                Config.ENEMY_OFFSET_X if p == 0 else Config.BOARD_OFFSET_X,
                 Config.BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT
             )
-            if row is None: return
+            if row is None:
+                return
+
+            # 4) Grab this player’s attack board and the opponent’s ship board
             attacks = state.pass_play_attacks[p]
-            board   = state.pass_play_boards[1-p]
-            if attacks[row][col] != Cell.EMPTY: return
+            board   = state.pass_play_boards[1 - p]
 
-            hit, ship = fire_at(row, col, state.ai_board)
-            state.player_attacks[row][col] = Cell.HIT if hit else Cell.MISS
+            # 5) Ignore clicks on cells already tried
+            if attacks[row][col] != Cell.EMPTY:
+                return
 
-            # ─── spawn a fading explosion or splash ───────────
+            # 6) Fire at the opponent board (fix: use `board`, not non‐existent ai_board)
+            hit, ship = fire_at(row, col, board)
+
+            # 7) Mark hit/miss on this player’s attack grid
+            attacks[row][col] = Cell.HIT if hit else Cell.MISS
+
+            # 8) Spawn the fading effect on the correct side:
             now = pygame.time.get_ticks()
+            #    board_idx: 1 for the right‐hand grid, 0 for left
+            board_idx = 1 - p
             if hit:
                 state.explosions.append({
                     "row":       row,
                     "col":       col,
                     "time":      now,
-                    "board_idx": 1     # right‐hand grid is the AI board
+                    "board_idx": board_idx,
                 })
             else:
                 state.miss_splashes.append({
                     "row":       row,
                     "col":       col,
                     "time":      now,
-                    "board_idx": 1
+                    "board_idx": board_idx,
                 })
 
-            # 3) Record hit‐count if you still want it
+            # 9) Update shot count
             state.pass_play_shots[p] += 1
- 
 
-            # 4) Compute time‐based bonus/penalty
-            now     = pygame.time.get_ticks()
+            # 10) Compute time‐bonus/penalty
             last    = state.pass_play_last_shot_time[p]
             elapsed = now - last if last else 0
             state.pass_play_last_shot_time[p] = now
 
-            # 5) Base points or miss penalty
+            # 11) Base points + optional bonuses
             points = Config.BASE_HIT_POINTS if hit else -Config.MISS_PENALTY
-
             if hit:
-                # 6) Time bonus (capped by your MAX_SHOT_TIME_MS)
+                # time‐bonus capped by MAX_SHOT_TIME_MS
                 bonus_ms   = max(0, Config.MAX_SHOT_TIME_MS - elapsed)
                 time_bonus = (bonus_ms // 1000) * Config.TIME_BONUS_FACTOR
-                points    += time_bonus
+                points   += time_bonus
 
-                # 7) Sunk‐ship bonus (flat + per‐cell)
+                # sunk‐ship bonus (if you ever track real Ship objects)
                 if ship and getattr(ship, "is_sunk", lambda: False)():
                     points += Config.SHIP_SUNK_BONUS
                     points += getattr(ship, "length", 0) * Config.SHIP_LENGTH_BONUS
 
-            # 8) Apply to this player’s Pass-&-Play score
             state.pass_play_score[p] += points
 
-            # (Optional) track raw hits:
-            # if hit:
-            #     state.pass_play_hits[p] += 1
-            # check victory
-            if state.count_ships(board)==0:
-                state.winner    = f"Player {p+1}"
+            # 12) Check for victory on the opponent’s board
+            if state.count_ships(board) == 0:
+                state.winner     = f"Player {p+1}"
                 state.game_state = "stats"
                 return
-            # flip turn
+
+            # 13) Flip turn and switch which grids get drawn
             state.current_player = 1 - p
-            # switch what you draw next
             state.player_attacks = state.pass_play_attacks[state.current_player]
             state.player_board   = state.pass_play_boards[1 - state.current_player]
             return
-
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return
 
