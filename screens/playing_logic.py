@@ -108,6 +108,7 @@ class PlayingLogic:
 
             # 9) Update shot count
             state.pass_play_shots[p] += 1
+            state.pass_play_shot_times[p].append(now)
 
             # 10) Compute time‐bonus/penalty
             last    = state.pass_play_last_shot_time[p]
@@ -121,6 +122,8 @@ class PlayingLogic:
                 bonus_ms   = max(0, Config.MAX_SHOT_TIME_MS - elapsed)
                 time_bonus = (bonus_ms // 1000) * Config.TIME_BONUS_FACTOR
                 points   += time_bonus
+                # — record the hit for stats —
+                state.pass_play_hits[p] += 1
 
                 # sunk‐ship bonus (if you ever track real Ship objects)
                 if ship and getattr(ship, "is_sunk", lambda: False)():

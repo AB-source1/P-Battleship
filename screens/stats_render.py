@@ -29,9 +29,24 @@ class StatsRender:
 
         # ─── PASS & PLAY vs AI/Network split ────────────────────
         if state.pass_play_mode:
-            # We just finished a local 2-player game
+            # Pass & Play banner + per-player scores
             title_y = 120
             draw_text_center(screen, "Pass & Play Results", Config.WIDTH // 2, title_y, 48)
+
+            # Draw each player's total score
+            score_y = title_y + 40
+            draw_text_center(
+                screen,
+                f"Player 1 Score: {state.pass_play_score[0]}",
+                Config.WIDTH // 4, score_y, font_size=28
+            )
+            draw_text_center(
+                screen,
+                f"Player 2 Score: {state.pass_play_score[1]}",
+                Config.WIDTH * 3 // 4, score_y, font_size=28
+            )
+            # Shift down the stats table start
+            stats_start_y = score_y + 50
 
             # Skip the single‐player banner and final‐score
         else:
@@ -97,7 +112,7 @@ class StatsRender:
         # Layout: two columns
         left_x = Config.WIDTH // 4
         right_x = Config.WIDTH * 3 // 4
-        start_y = 200
+        start_y  = locals().get('stats_start_y', 200)
         line_h = 40
 
         # Column headers: always “Player 1” / “Player 2” in Pass&Play,
