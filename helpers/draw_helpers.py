@@ -116,7 +116,17 @@ def draw_text_center(screen, text, x, y, font_size=30,bg_color=None):
     screen.blit(surface, rect)
 
 def draw_modal(screen, title, subtitle, on_yes, on_no):
-    overlay = pygame.Surface((Config.WIDTH, Config.HEIGHT), pygame.SRCALPHA)
+     # ─── Blur the existing canvas behind the modal ───────────────
+    # 1) Snapshot current screen
+    bg = screen.copy()
+    w, h = bg.get_size()
+    # 2) Downscale and upscale to approximate Gaussian blur
+    small = pygame.transform.smoothscale(bg, (w//10, h//10))
+    blurred = pygame.transform.smoothscale(small, (w, h))
+    screen.blit(blurred, (0, 0))
+
+    # 3) Darken slightly so modal text remains legible
+    overlay = pygame.Surface((w, h), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 180))
     screen.blit(overlay, (0, 0))
 
@@ -132,13 +142,12 @@ def draw_modal(screen, title, subtitle, on_yes, on_no):
     draw_button(screen, "No", box_rect.right - 160, box_rect.y + 120, 100, 40, Config.RED, Config.DARK_GRAY, on_no,3)
 
 def draw_text_input_box(screen, user_text):
-    font = pygame.font.SysFont(None, 36)
-    prompt = font.render("Enter your name:", True, Config.WHITE)
-    screen.blit(prompt, (Config.WIDTH // 2 - 150, Config.HEIGHT // 2 - 60))
-    input_box = pygame.Rect(Config.WIDTH // 2 - 150, Config.HEIGHT // 2, 300, 40)
+    font       = pygame.font.SysFont(None, 36)
+    # (prompt is now drawn by the caller, e.g. "Enter size (5-20):")
+    input_box  = pygame.Rect(Config.WIDTH // 2 - 150, Config.HEIGHT // 2, 300, 40)
     pygame.draw.rect(screen, Config.WHITE, input_box, 2)
-    name_surface = font.render(user_text, True, Config.WHITE)
-    screen.blit(name_surface, (input_box.x + 10, input_box.y + 5))
+    text_surf  = font.render(user_text, True, Config.WHITE)
+    screen.blit(text_surf, (input_box.x + 10, input_box.y + 5))
 
 def draw_x(screen, x, y, cell_size):
     """

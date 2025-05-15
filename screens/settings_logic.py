@@ -1,3 +1,6 @@
+# Updated settings_logic.py and settings_render.py
+
+# settings_logic.py
 import pygame
 from core.config import Config
 from core.game_state import GameState
@@ -20,10 +23,14 @@ class SettingsLogic:
                     if len(self.grid_size_input) < 2:
                         self.grid_size_input += event.unicode
 
-    def apply_grid_size(self, size):
+    def apply_grid_size(self, size: int):
+        """
+        Update the grid size in Config and recompute layout.
+        Does NOT reset the game state, so the user remains on the Settings screen.
+        """
         Config.GRID_SIZE = size
         Config.update_layout()
-        self.state.reset_all()
+        # Removed state.reset_all() to prevent exiting Settings
 
     def apply_custom_size(self):
         try:
@@ -41,9 +48,10 @@ class SettingsLogic:
         self.show_custom_input = not self.show_custom_input
         self.grid_size_input = ""
     
-    def apply_difficulty(self, level):
-        """Set AI difficulty and restart placement."""
+    def apply_difficulty(self, level: str):
+        """
+        Set AI difficulty level.
+        Does NOT reset the game state immediately, so the user stays on the Settings screen.
+        """
         self.state.difficulty = level
-        # clear any existing AI memory
-        
-        self.state.reset_all()
+        # Removed self.state.reset_all() to prevent exiting Settings
