@@ -214,66 +214,40 @@ class PlayingRender:
                         draw_x(screen, px, py, self.cell_size)
 
     def _reveal_sunk_standard(self, screen, state):
-        rows = cols = Config.GRID_SIZE
-        visited = set()
-        board = state.computer_board
-        for r in range(rows):
-            for c in range(cols):
-                if board[r][c] == Cell.HIT and (r, c) not in visited:
-                    # BFS cluster
-                    cluster = [(r,c)]
-                    queue = [(r,c)]
-                    visited.add((r,c))
-                    while queue:
-                        rr, cc = queue.pop(0)
-                        for dr, dc in [(1,0),(-1,0),(0,1),(0,-1)]:
-                            nr, nc = rr+dr, cc+dc
-                            if (0 <= nr < rows and 0 <= nc < cols and
-                                board[nr][nc] == Cell.HIT and (nr,nc) not in visited):
-                                visited.add((nr,nc))
-                                queue.append((nr,nc))
-                                cluster.append((nr,nc))
-                    size = len(cluster)
-                    if size not in SHIP_IMAGE_FILES: 
-                        continue
-                    horiz = all(r0 == cluster[0][0] for r0, _ in cluster)
-                    
-                    # ─── ENSURE NO UNHIT NEIGHBORS FOR THIS CLUSTER ───
-                    # if there’s an unhit ship-cell just off either end, skip it
-                    if horiz:
-                        r0       = cluster[0][0]
-                        cols_hit = sorted(c0 for _,c0 in cluster)
-                        if ((cols_hit[0] - 1 >= 0 and state.computer_board[r0][cols_hit[0]-1] == Cell.SHIP)
-                        or (cols_hit[-1]+1 < cols and state.computer_board[r0][cols_hit[-1]+1] == Cell.SHIP)):
-                            continue
-                    else:
-                        c0       = cluster[0][1]
-                        rows_hit = sorted(r0 for r0,_ in cluster)
-                        if ((rows_hit[0] - 1 >= 0 and state.computer_board[rows_hit[0]-1][c0] == Cell.SHIP)
-                        or (rows_hit[-1]+1 < rows and state.computer_board[rows_hit[-1]+1][c0] == Cell.SHIP)):
-                            continue
+        """
+        Reveal ships on the computer board once all their cells are HIT,
+        using the exact coords recorded in state.computer_ships_coords.
+        """
+        cs = self.cell_size
+        top_y = Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT
 
-                    # top‐left cell of the sunk ship cluster
-                    min_r = min(r0 for r0,_ in cluster)
-                    min_c = min(c0 for _,c0 in cluster)
+        for coords in state.computer_ships_coords:
+            # have all cells of this ship been hit?
+            if all(state.computer_board[r][c] == Cell.HIT for (r, c) in coords):
+                # compute bounding box
+                rows = [r for r, _ in coords]
+                cols = [c for _, c in coords]
+                min_r, max_r = min(rows), max(rows)
+                min_c, max_c = min(cols), max(cols)
 
-                    # build & orient the sprite
-                    ship = DraggableShip(size, 0, 0)
-                    if not horiz:
-                        ship.rotate()
+                # determine orientation and size
+                size = len(coords)
+                horiz = (min_r == max_r)
 
-                    # ── compute scaled width/height for the smaller grid ──
-                    w = size * self.cell_size if horiz else self.cell_size
-                    h = self.cell_size       if horiz else size * self.cell_size
-                    img_scaled = pygame.transform.smoothscale(ship.image, (w, h))
+                # create & orient sprite
+                ship = DraggableShip(size, 0, 0)
+                if not horiz:
+                    ship.rotate()
 
-                    # ── pick the enemy‐board offset for the shrunken grid ──
-                    offx = Config.PLAY_ENEMY_OFFSET_X
+                # scale to playing‐cell size
+                w = size * cs if horiz else cs
+                h = cs       if horiz else size * cs
+                img_scaled = pygame.transform.smoothscale(ship.image, (w, h))
 
-                    # ── pixel-perfect position in the 90%-sized cells ──
-                    x = offx + min_c * self.cell_size
-                    y = Config.PLAY_BOARD_OFFSET_Y + Config.TOP_BAR_HEIGHT + min_r * self.cell_size
-                    screen.blit(img_scaled, (x, y))
+                # compute pixel position
+                x = Config.PLAY_ENEMY_OFFSET_X + min_c * cs
+                y = top_y + min_r * cs
+                screen.blit(img_scaled, (x, y))
 
     def _draw_endgame(self, screen, msg):
         draw_text_center(screen, msg, Config.WIDTH//2, Config.HEIGHT//2 - 50)

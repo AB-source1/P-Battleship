@@ -67,19 +67,23 @@ class GameState:
         """(Re)create both boards and the player's attack grid."""
         self.player_board   = create_board()
         self.computer_board = create_board()
+        self.computer_ships_coords = []
         self.player_attacks = [
             [Cell.EMPTY for _ in range(Config.GRID_SIZE)]
             for _ in range(Config.GRID_SIZE)
         ]
         # Place the computer’s ships randomly
         for size in Config.SHIP_SIZES:
-            place_ship_randomly(self.computer_board, size)
+            coords = place_ship_randomly(self.computer_board, size)
+            self.computer_ships_coords.append(coords)
 
         self.pass_play_mode    = False
         self.pass_play_stage   = 0
         self.current_player    = 0
         self.pass_play_boards  = [None, None]
         self.pass_play_attacks = [None, None]
+
+        
 
         # … invoke placement callback …
         self.reset_callback()
