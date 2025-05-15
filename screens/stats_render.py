@@ -5,10 +5,27 @@ from core.config import Config
 class StatsRender:
     def __init__(self, logic):
         self.logic = logic
+        global _stats_panel_raw
+        try:
+            _stats_panel_raw
+        except NameError:
+            _stats_panel_raw = pygame.image.load("resources/images/grid_panel.png").convert_alpha()
+        self.panel_raw = _stats_panel_raw
 
     def draw(self, screen, state):
         # Draw the top bar (title, restart/quit buttons)
         draw_top_bar(screen, state)
+
+        # ─── Draw a scaled frame around the stats area ───────────────────────────
+        # Compute the panel size: leave 50px margin on left/right, top under the bar
+        panel_w = Config.WIDTH  - 100
+        panel_h = Config.HEIGHT - Config.TOP_BAR_HEIGHT + 50
+        panel = pygame.transform.smoothscale(self.panel_raw, (panel_w, panel_h))
+        panel_x = 50
+        panel_y = Config.TOP_BAR_HEIGHT -20
+        screen.blit(panel, (panel_x, panel_y))
+
+        # Now all subsequent text/buttons will render on top of this panel
 
         # ─── PASS & PLAY vs AI/Network split ────────────────────
         if state.pass_play_mode:
