@@ -62,6 +62,8 @@ class Config:
     EXPLOSION_FADE_DURATION = 500  # milliseconds
     MISS_FADE_DURATION      = 500  # ms (same fade duration for splashes)
 
+    FPS = 60
+
     @staticmethod
     def generate_ships_for_grid():
         """Populate Config.SHIP_SIZES based on grid size or smart toggle."""

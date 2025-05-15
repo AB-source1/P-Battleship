@@ -22,15 +22,18 @@ from game.board_helpers     import create_board
 
 # ─── Pygame Initialization ───────────────────────────────────────────────────
 pygame.init()
-screen = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT),pygame.RESIZABLE)
+VW, VH = Config.WIDTH, Config.HEIGHT
+canvas = pygame.Surface((VW, VH))
+screen = pygame.display.set_mode((VW, VH), pygame.RESIZABLE)
 pygame.display.set_caption("P-Battleship")
 # ─── Load both menu & battle backgrounds ────────────────────────────────────
 bg_menu_img   = pygame.image.load("resources/images/cartoon_loading.png").convert()
 battle_bg_img = pygame.image.load("resources/images/cartoon_battle_bg.png").convert()
 
 # initial scale
-menu_background   = pygame.transform.smoothscale(bg_menu_img,   (Config.WIDTH, Config.HEIGHT))
-battle_background = pygame.transform.smoothscale(battle_bg_img, (Config.WIDTH, Config.HEIGHT))
+menu_background   = pygame.transform.smoothscale(bg_menu_img,   (VW, VH))
+battle_background = pygame.transform.smoothscale(battle_bg_img, (VW, VH))
+
 
 Config.update_layout()
 
@@ -93,53 +96,49 @@ while state.running:
     if state.game_state == "placing" and state.network:
         placing_logic.update(state)
 
-    # 2) Event handling
-    for event in pygame.event.get():
+    raw_events = pygame.event.get()
+    win_w, win_h = screen.get_size()
+    scale_x = VW / win_w
+    scale_y = VH / win_h
+
+    events = []
+    for ev in raw_events:
+        # remap any mouse position into canvas space
+        if hasattr(ev, "pos"):
+            mx, my = ev.pos
+            ev.pos = (int(mx * scale_x), int(my * scale_y))
+        events.append(ev)
+
+    for event in events:
+        # Quit → show modal
         if event.type == pygame.QUIT:
             state.show_quit_modal = True
 
-         # ─── Handle OS‐resize (e.g. user clicks Maximize/Restore, drags border) ─────
-        if event.type == pygame.VIDEORESIZE:
-            # Update our game’s width/height
-            Config.WIDTH, Config.HEIGHT = event.w, event.h
-            # Recreate the screen surface in RESIZABLE mode
-            screen = pygame.display.set_mode(
-                (Config.WIDTH, Config.HEIGHT),
-                pygame.RESIZABLE
-            )
-            # Rescale the background to fill the new size
-            menu_background   = pygame.transform.smoothscale(bg_menu_img,   (Config.WIDTH, Config.HEIGHT))
-            battle_background = pygame.transform.smoothscale(battle_bg_img, (Config.WIDTH, Config.HEIGHT))
-            # Recompute all your grid‐offsets, cell sizes, etc.
-            Config.update_layout()
-            continue    # skip any other handlers for this event
+        # Handle actual OS window‐resize (keep canvas size fixed)
+        elif event.type == pygame.VIDEORESIZE:
+            # update your window dims
+            screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+            # optionally re-rescale backgrounds, if you want crisp edges
+            # (but with canvas scaling you can skip this)
+            menu_background   = pygame.transform.smoothscale(bg_menu_img,   (VW, VH))
+            battle_background = pygame.transform.smoothscale(battle_bg_img, (VW, VH))
+            continue
 
-        
-
-            # Recompute grid‐layout & offsets for new size
-            Config.update_layout()
-            # Rescale the background to fit exactly
-            background = pygame.transform.smoothscale(
-                bg_image,
-                (Config.WIDTH, Config.HEIGHT)
-            )
-            continue    # don’t let this keypress fall through to other handlers
-
-        # block input when any modal is visible
+        # Block input while a modal is open
         if state.show_restart_modal or state.show_quit_modal:
             continue
 
+        # ESC to back out
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             if state.history:
-                # pop last scene
                 prev = state.history.pop()
                 state.skip_push = True
                 state.game_state = prev
             else:
-                # nothing to go back to ⇒ quit modal
                 state.show_quit_modal = True
             continue
 
+        # Dispatch to each screen’s logic
         if   state.game_state == "menu":
             menu_logic.handle_event(event, state)
         elif state.game_state == "lobby":
@@ -153,122 +152,77 @@ while state.running:
         elif state.game_state == "stats":
             stats_logic.handle_event(event)
 
-    # 3) Detect entering "playing" to reinitialize turn flags
+    # ─── 2) Scene‐change bookkeeping ─────────────────────────────────────────
     if prev_scene != state.game_state:
         if not state.skip_push:
             state.history.append(prev_scene)
         state.skip_push = False
 
-
-        
-        # ─── entering “playing” ⇒ reset AI & start timer
         if state.game_state == "playing":
             playing_logic.reset()
-            # record the moment play begins
             state.timer_start = pygame.time.get_ticks()
-           
-            # ─── RESET SCORING ─────────────────────
-            now = pygame.time.get_ticks()
-            state.score          = 0
-            state.hit_count      = 0
-            state.last_shot_time = now
+            state.score = 0
+            state.hit_count = 0
+            state.last_shot_time = state.timer_start
 
     prev_scene = state.game_state
 
-    # 4) Draw background and active scene
-    # choose the right backdrop
+    # ─── 3) DRAW EVERYTHING INTO THE CANVAS ────────────────────────────────
+    # Background
     if state.game_state == "menu":
-        screen.blit(menu_background, (0, 0))
+        canvas.blit(menu_background, (0, 0))
     else:
-        screen.blit(battle_background, (0, 0))
+        canvas.blit(battle_background, (0, 0))
 
-    # now layer on each screen’s UI
+    # UI layer
     if   state.game_state == "menu":
-        menu_render.draw(screen, state)
+        menu_render.draw(canvas, state)
     elif state.game_state == "lobby":
-        lobby_render.draw(screen, state)
+        lobby_render.draw(canvas, state)
     elif state.game_state == "settings":
-        settings_render.draw(screen, state)
+        settings_render.draw(canvas, state)
     elif state.game_state == "placing":
-        placing_render.draw(screen, state)
+        placing_render.draw(canvas, state)
     elif state.game_state == "playing":
-        playing_render.draw(screen, state)
+        playing_render.draw(canvas, state)
     elif state.game_state == "stats":
-        stats_render.draw(screen, state)
+        stats_render.draw(canvas, state)
 
-    # 5) Restart confirmation modal
+    # Modals (draw *into* canvas so they scale, not onto screen)
     if state.show_restart_modal:
-        def _confirm_restart():
-            state.show_restart_modal = False
-            restart_game()
-        def _cancel_restart():
-            state.show_restart_modal = False
-
-        draw_modal(
-            screen,
-            title="Restart game?",
-            subtitle="All progress will be lost.",
-            on_yes=_confirm_restart,
-            on_no=_cancel_restart
-        )
-
-    # 6) Quit confirmation modal
+        def _ok():    state.show_restart_modal = False; restart_game()
+        def _no():    state.show_restart_modal = False
+        draw_modal(canvas, "Restart game?", "All progress will be lost.", _ok, _no)
     elif state.show_quit_modal:
-        def _confirm_quit():
-            pygame.quit()
-            sys.exit()
-        def _cancel_quit():
-            state.show_quit_modal = False
-
-        draw_modal(
-            screen,
-            title="Quit game?",
-            subtitle="Are you sure you want to exit?",
-            on_yes=_confirm_quit,
-            on_no=_cancel_quit
-        )
-
-    # 7) Opponent-left modal
+        def _yes():   pygame.quit(); sys.exit()
+        def _no2():   state.show_quit_modal = False
+        draw_modal(canvas, "Quit game?", "Are you sure?", _yes, _no2)
     if state.opponent_left:
-        def _back_to_menu():
-            state.opponent_left = False
-            state.game_state    = "menu"
-        def _close_modal():
-            state.opponent_left = False
+        def _goto_menu(): state.opponent_left=False; state.game_state="menu"
+        draw_modal(canvas,
+                   "Opponent Disconnected",
+                   "Other player left.",
+                   _goto_menu, _goto_menu)
+    if getattr(state, "show_pass_modal", False):
+        def _pass(): 
+            state.show_pass_modal=False
+            state.player_board = create_board()
+            placing_logic.reset()
+            state.pass_play_stage=2
+            state.game_state="placing"
+        draw_modal(canvas,
+                   "Pass to Player 2",
+                   "Press Yes when ready",
+                   _pass, _pass)
 
-        draw_modal(
-            screen,
-            title="Opponent Disconnected",
-            subtitle="The other player has left the game.",
-            on_yes=_back_to_menu,
-            on_no=_close_modal,
-            yes_text="Main Menu",
-            no_text="Close"
-        )
-
-     # 8) Pass-and-Play handoff modal ─────────────────────────────
-    if getattr(state, 'show_pass_modal', False):
-        # When P1 finishes placing, we paused for the handoff.
-        def _confirm_pass():
-            # Hide this modal…
-            state.show_pass_modal = False
-            # …and reset the board for Player 2’s placement
-            state.player_board     = create_board()
-            placing_logic.reset()      # reload the ship queue UI
-            state.pass_play_stage  = 2
-            state.game_state       = "placing"
-
-        # Draw the “Pass to Player 2” overlay
-        draw_modal(
-            screen,
-            title="Pass to Player 2",
-            subtitle="Press Yes when ready",
-            on_yes=_confirm_pass,
-            on_no =_confirm_pass   # same behavior for simplicity
-        )
-    # ────────────────────────────────────────────────────────────
+    # ─── 4) STRETCH + FLIP ONCE ─────────────────────────────────────────────
+    win_w, win_h = screen.get_size()
+    scaled = pygame.transform.smoothscale(canvas, (win_w, win_h))
+    screen.blit(scaled, (0, 0))
     pygame.display.flip()
-    clock.tick(60)
 
+    clock.tick(Config.FPS)
+
+# ─── Shutdown ─────────────────────────────────────────────────────────────
 pygame.quit()
 sys.exit()
