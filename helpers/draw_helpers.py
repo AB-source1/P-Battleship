@@ -41,8 +41,16 @@ def toggle_audio(state):
     state.audio_enabled = not state.audio_enabled
     pygame.mixer.music.set_volume(1 if state.audio_enabled else 0)
 
-def draw_button(screen, text, x, y, w, h, color, hover_color, action=None,border=0):
-    mouse = pygame.mouse.get_pos()
+def draw_button(screen, text, x, y, w, h, color, hover_color, action=None, border=0):
+    # 1) get real window mouse pos
+    mouse_win = pygame.mouse.get_pos()
+    win_w, win_h = pygame.display.get_surface().get_size()
+    # 2) compute canvas‐to‐window scale
+    sx = Config.WIDTH  / win_w
+    sy = Config.HEIGHT / win_h
+    # 3) remap into canvas coordinates
+    mouse = (mouse_win[0] * sx, mouse_win[1] * sy)
+
     click = pygame.mouse.get_pressed()
     rect = pygame.Rect(x, y, w, h)
     pygame.draw.rect(screen, hover_color if rect.collidepoint(mouse) else color, rect)
@@ -79,19 +87,22 @@ def _cell_color(cell: Cell, show_ships: bool):
         return Config.BLUE
     return None
 
-def draw_grid(screen, board, offset_x, offset_y, show_ships=False):
+def draw_grid(screen, board, offset_x, offset_y, show_ships=False, cell_size=None):
+    # allow custom grid cell size, defaulting to Config.CELL_SIZE
+    size = cell_size or Config.CELL_SIZE
+
     for row in range(Config.GRID_SIZE):
         for col in range(Config.GRID_SIZE):
-            x = offset_x + col * Config.CELL_SIZE
-            y = offset_y + row * Config.CELL_SIZE
-            rect = pygame.Rect(x, y, Config.CELL_SIZE, Config.CELL_SIZE)
+            x = offset_x + col * size
+            y = offset_y + row * size
+            rect = pygame.Rect(x, y, size, size)
             pygame.draw.rect(screen, Config.WHITE, rect, 1)
 
             cell = board[row][col]
             color = _cell_color(cell, show_ships)
             if color:
                 if cell == Cell.MISS:
-                    pygame.draw.circle(screen, color, rect.center, Config.CELL_SIZE // 6)
+                    pygame.draw.circle(screen, color, rect.center, size // 6)
                 elif cell == Cell.HIT:
                     pygame.draw.line(screen, color, rect.topleft, rect.bottomright, 2)
                     pygame.draw.line(screen, color, rect.topright, rect.bottomleft, 2)
