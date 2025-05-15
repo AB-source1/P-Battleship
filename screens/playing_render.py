@@ -160,7 +160,7 @@ class PlayingRender:
             screen,
             turn_label,
             Config.WIDTH // 2,
-            Config.TOP_BAR_HEIGHT + 50,
+            Config.TOP_BAR_HEIGHT + 40,
             font_size=24
         )
         # End-of-game or active placement
