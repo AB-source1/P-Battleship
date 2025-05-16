@@ -96,7 +96,7 @@ class PlacingLogic:
 
     def snap_back(self):
         if self.active_ship:
-            self.active_ship.rect.topleft = self.main_area_position()
+            self.active_ship.reset_position()
 
     def handle_event(self, event: pygame.event.Event, state):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:

@@ -2,13 +2,11 @@ import os
 import pygame
 from core.config import Config
 
-# ─── Map only the sizes you generate (SHIP_SIZES = [5,4,3] for GRID≤12) :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
 SHIP_IMAGE_FILES = {
-    3: "ShipSubMarineHull.png",    # size-3 ship
-    4: "ShipDestroyerHull.png",    # size-4 ship
-    5: "ShipBattleshipHull.png",   # size-5 ship
+    3: "ShipSubMarineHull.png",
+    4: "ShipDestroyerHull.png",
+    5: "ShipBattleshipHull.png",
 }
-
 
 class DraggableShip:
     def __init__(self, size: int, x: int, y: int):
@@ -17,7 +15,7 @@ class DraggableShip:
         x, y: initial top-left pixel coords for the sprite
         """
         self.size = size
-        self.orientation = 'h'
+        self.orientation = 'h'  # 'h' or 'v'
 
         # ─── Load & validate the correct sprite ─────────────────────────────────
         filename = SHIP_IMAGE_FILES.get(size)
@@ -26,37 +24,57 @@ class DraggableShip:
         image_path = os.path.join("resources", "images", filename)
         raw = pygame.image.load(image_path).convert_alpha()
 
-        # ─── 2) Scale it as a VERTICAL strip: CELL_SIZE×(size × CELL_SIZE)
+        # ─── Scale it as a vertical strip: CELL_SIZE × (size × CELL_SIZE)
         vertical = pygame.transform.scale(
             raw,
             (Config.CELL_SIZE, size * Config.CELL_SIZE)
         )
 
-        # ─── 3) Rotate once (–90°) to create a horizontal base image
+        # ─── Create the horizontal base image by rotating -90°
         self.base_image = pygame.transform.rotate(vertical, -90)
-        # ─── Start unrotated
+
+        # ─── Start unrotated (horizontal)
         self.image = self.base_image
         self.rect  = self.image.get_rect(topleft=(x, y))
 
+        # ─── Record the _center_ we'll snap back to (same for both orientations)
+        self.initial_center = self.rect.center
+
         # ─── Drag state (unchanged API) ─────────────────────────────────────────
-        self.dragging   = False
+        self.dragging    = False
         self.drag_offset = (0, 0)
-        self.coords     = []  # filled when the ship is finally placed
+        self.coords      = []  # filled when the ship is finally placed
 
     def draw(self, surface: pygame.Surface):
         """Blit the ship sprite at its current position."""
         surface.blit(self.image, self.rect)
 
     def rotate(self):
-        """
-        Toggle orientation and rotate the sprite by ±90° around its center.
-        Always rotates the original horizontal `base_image` to avoid blurring.
-        """
-        self.orientation = 'v' if self.orientation == 'h' else 'h'
-        angle = 90 if self.orientation == 'v' else -90
-        self.image = pygame.transform.rotate(self.base_image, angle)
+        # 1) remember center
         old_center = self.rect.center
+
+        # 2) swap image/orientation
+        if self.orientation == 'h':
+            self.image = pygame.transform.rotate(self.base_image, 90)
+            self.orientation = 'v'
+        else:
+            self.image = self.base_image
+            self.orientation = 'h'
+
+        # 3) re-center rect on that same point
         self.rect = self.image.get_rect(center=old_center)
+
+        # ─── NEW: if the user is mid-drag, recompute the drag offset
+        #          so the ship stays stuck to the cursor post-rotation
+        if self.dragging:
+            mx, my = pygame.mouse.get_pos()
+            self.drag_offset = (self.rect.x - mx, self.rect.y - my)
+    def reset_position(self):
+        """
+        Snap the ship back to its original spawn center,
+        regardless of current orientation.
+        """
+        self.rect = self.image.get_rect(center=self.initial_center)
 
     def start_dragging(self, mx: int, my: int):
         """Begin dragging; record offset so the sprite follows the mouse."""
