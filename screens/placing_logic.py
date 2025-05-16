@@ -1,4 +1,4 @@
-# screens/placing_logic.py
+
 
 import pygame
 from game.draggable_ship import DraggableShip
@@ -6,6 +6,16 @@ from game.board_helpers import Cell, get_grid_pos, create_board
 from core.config import Config
 from helpers.draw_helpers import draw_top_bar
 
+"""
+Module: placing_logic.py
+Purpose:
+  - Pygame logic for the ship placement screen.
+  - Manages drag-and-drop, rotation, undo, and ready actions.
+  - Validates placements against grid rules and communicates readiness over network.
+Future Hooks:
+  - Implement retry and acknowledgment logic for placement messages.
+  - Display remote opponent's ship placements in ghost mode.
+"""
 
 class PlacingLogic:
     def __init__(self, screen, state):
@@ -22,6 +32,7 @@ class PlacingLogic:
         self.pass_play_placed_ships = [None, None]
 
     def setup_ships(self):
+        """Create DraggableShip instances from Config.SHIP_SIZES."""
         self.ship_queue = [
             DraggableShip(size, *self.main_area_position())
             for size in Config.SHIP_SIZES
@@ -48,6 +59,7 @@ class PlacingLogic:
         return (Config.WIDTH - 250, Config.HEIGHT // 2 - 100)
 
     def try_place_on_grid(self, ship):
+        """Validate and commit current ship to placing_board if legal."""
         row, col = get_grid_pos(
             (ship.rect.centerx, ship.rect.centery),
             self.grid_offset_x, self.grid_offset_y
@@ -99,6 +111,7 @@ class PlacingLogic:
             self.active_ship.reset_position()
 
     def handle_event(self, event: pygame.event.Event, state):
+        """Handle Pygame events for placement interactions."""
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.active_ship and self.active_ship.rect.collidepoint(event.pos):
                 self.active_ship.start_dragging(*event.pos)
@@ -132,7 +145,7 @@ class PlacingLogic:
 
                         # All ships placed? Then wait for Ready button
                         if not self.active_ship and not self.preview_ship:
-                            self.ready_to_start = True  # <-- just flag it
+                            self.ready_to_start = True  
                     else:
                         self.snap_back()
                 else:
@@ -143,6 +156,7 @@ class PlacingLogic:
                 self.active_ship.rotate()  
 
     def update(self, state):
+        """Poll for remote 'placement_done' messages and sync state."""
         if state.network and state.waiting_for_sync:
             msg = state.network.recv()
             if msg:
@@ -157,6 +171,7 @@ class PlacingLogic:
                     state.game_state       = "playing"
 
     def on_ready_pressed(self):
+        """Notify peer if networked and invoke placement callback."""
         state = self.state
         if state.pass_play_mode:
             if state.pass_play_stage == 0:
@@ -191,6 +206,7 @@ class PlacingLogic:
             state.placed_ships = self.placed_ships.copy()
 
     def undo_last_ship(self):
+        """ Undo last ship """
         if self.placed_ships:
             last_ship = self.placed_ships.pop()
             for (r, c) in last_ship.coords:
@@ -210,6 +226,7 @@ class PlacingLogic:
             self.ready_to_start = False  # undo disables ready
 
     def reset(self):
+        """Clear board and reset ship queue to start placement over."""
         self.state.player_board = create_board()
         self.active_ship  = None
         self.preview_ship = None

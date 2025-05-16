@@ -6,16 +6,19 @@ import errno
 import json
 from queue import Queue
 
-class Network:
-    """
-    Simple peer-to-peer TCP-based JSON messaging.
-    One side is host (server), the other joins (client).
-    Messages are newline-delimited JSON dicts.
-    On socket close or error, a {"type":"disconnect"} message is enqueued.
+"""
+Module: network.py
+Purpose:
+  - Peer-to-peer TCP JSON messaging for multiplayer.
+  - Host binds to ports 5000–5009; client connects to host.
+  - Messages are newline-delimited JSON dicts enqueued via Queue.
+Future Hooks:
+  - Implement heartbeat/ping and automatic reconnection.
+  - Use UDP broadcast for lobby discovery.
+"""
 
-    When hosting, if the requested port is in use, we automatically
-    try the next ports up to port+9.
-    """
+class Network:
+    
 
     def __init__(self, is_host: bool, host_ip: str, port: int = 5000):
         self.queue = Queue()
@@ -52,8 +55,7 @@ class Network:
 
     def _accept_client(self):
         """
-        Blocking accept. Once a client connects, set self.conn
-        and start the listener thread to read messages.
+        Accept a client connection, then start listening thread.
         """
         try:
             conn, _ = self.sock.accept()

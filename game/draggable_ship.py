@@ -2,6 +2,16 @@ import os
 import pygame
 from core.config import Config
 
+"""
+Module: draggable_ship.py
+Purpose:
+  - Wrapper for ship sprites during placement screen.
+  - Handles loading, scaling, and rotating hull images by ship length.
+  - Manages drag state, offsets, and final grid coords.
+Future Hooks:
+  - Display "ghost" preview of remote player's ships via network data.
+"""
+
 SHIP_IMAGE_FILES = {
     3: "ShipSubMarineHull.png",
     4: "ShipDestroyerHull.png",

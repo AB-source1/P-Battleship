@@ -5,6 +5,16 @@ import pygame
 from core.config import Config
 from screens.settings_logic import SettingsLogic
 
+"""
+Module: settings_tk.py
+Purpose:
+  - Standalone Tkinter settings window (outside Pygame).
+  - Mirrors Pygame settings logic: preset/custom grid sizes, AI difficulty, audio toggles.
+  - Responsive layout with resize-debounce and PIL-backed background.
+Future Hooks:
+  - Synchronize changed settings across multiplayer peers.
+"""
+
 def _hex(rgb):
     return "#{:02x}{:02x}{:02x}".format(*rgb)
 
@@ -97,10 +107,12 @@ class SettingsTk:
         self._layout()
 
     def _on_back(self):
+        """Close window and invoke return callback."""
         self.root.destroy()
         self.on_back()
 
     def _apply_grid(self, size: int):
+        """Apply a preset grid size and update layout."""
         self.logic.apply_grid_size(size)
         self._layout()
 
@@ -118,6 +130,7 @@ class SettingsTk:
         self.resize_job = self.root.after(100, self._layout)
 
     def _resize_bg(self, w: int, h: int):
+        """Resize and draw background image to fill window."""
         img = self.orig_bg.resize((w, h), Image.LANCZOS)
         self.bg_img = ImageTk.PhotoImage(img)
         if hasattr(self, "_bg_id"):
@@ -127,6 +140,7 @@ class SettingsTk:
         self.canvas.image = self.bg_img
 
     def _layout(self):
+        """Perform full layout of controls based on current window size."""
         w, h = self.root.winfo_width(), self.root.winfo_height()
         if w < 100 or h < 100:
             return

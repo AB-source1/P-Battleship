@@ -2,6 +2,19 @@ import pygame
 from helpers.draw_helpers import draw_top_bar, draw_text_center, draw_button
 from core.config import Config
 
+"""
+Module: stats_render.py
+Purpose:
+  - Pygame render layer for the end-of-game statistics screen.
+  - Draws top bar, background panel, and per-mode stats display.
+  - Supports Pass & Play vs AI/Network layouts: banners, scores.
+  - Shows computed stats: Shots, Hits, Accuracy, Avg/Shot, Total time.
+  - Renders action buttons: Play Again, Main Menu.
+Future Hooks:
+  - Animate stat transitions and graphs.
+  - Share stats summary over the network.
+"""
+
 class StatsRender:
     def __init__(self, logic):
         self.logic = logic
@@ -48,9 +61,9 @@ class StatsRender:
             # Shift down the stats table start
             stats_start_y = score_y + 50
 
-            # Skip the single‐player banner and final‐score
+            
         else:
-            # Existing Winner/Score banner for AI/online
+            
             if state.winner == "Player":
                 msg = "You won!"
             else:

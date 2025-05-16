@@ -4,6 +4,17 @@ from random import randint
 from core.config import Config
 from core.game_state import GameState
 from game.board_helpers import Cell, get_grid_pos, fire_at
+"""
+Module: playing_logic.py
+Purpose:
+  - Core in-battle firing & turn management logic.
+  - Supports single-player, pass-and-play, and multiplayer modes.
+  - Implements AI behaviors (random, hunt/destroy, advanced) based on difficulty.
+  - Handles network shot exchange and result propagation.
+Future Hooks:
+  - Introduce acknowledgment & timeout handling for sent shots.
+  - Add ping mechanism to detect stale connections.
+"""
 
 
 class PlayingLogic:

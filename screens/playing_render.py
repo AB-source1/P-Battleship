@@ -7,6 +7,19 @@ from core.config import Config
 from game.draggable_ship import DraggableShip, SHIP_IMAGE_FILES
 from game.board_helpers import Cell
 
+"""
+Module: playing_render.py
+Purpose:
+  - Pygame render layer for in-battle screen.
+  - Draws two-panel layout: your fleet & enemy waters.
+  - Renders hits, misses, sunk-ship overlays, and animations (explosions, splashes).
+  - Displays score, timer, and turn indicator (you vs opponent).
+  - Handles end-of-game overlay with appropriate buttons.
+Future Hooks:
+  - Animate remote shots landing with network timestamps.
+  - Support custom UI skins via theme config.
+"""
+
 _panel_raw = None
 class PlayingRender:
     def __init__(self, logic):
@@ -25,6 +38,7 @@ class PlayingRender:
         self.panel  = pygame.transform.smoothscale(_panel_raw, (padded, padded))
         self.margin = margin
     def draw(self, screen, state):
+        """Render the main battle UI elements each frame."""
         # 1) Always draw top bar
         draw_top_bar(screen, state)
 

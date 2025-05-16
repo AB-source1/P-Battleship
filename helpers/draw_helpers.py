@@ -3,9 +3,19 @@ import pygame
 from core.config import Config
 from game.board_helpers import Cell
 
+"""
+Module: draw_helpers.py
+Purpose:
+  - Shared rendering functions: top bar, buttons, grid, text, modals, audio toggle.
+Future Hooks:
+  - Overlay remote turn indicator via state.network.
+"""
+# button_states: track per-button click state to debounce
 button_states = {}
 
 def draw_top_bar(screen, state):
+    """Draw restart, close, and music toggle buttons."""
+    # Render icons in fixed positions; check for clicks
     bar_rect = pygame.Rect(0, 0, Config.WIDTH, Config.TOP_BAR_HEIGHT)
     pygame.draw.rect(screen, Config.GRAY, bar_rect)
 
@@ -38,10 +48,12 @@ def draw_top_bar(screen, state):
     
 
 def toggle_audio(state):
+    """Mute or unmute background music."""
     state.audio_enabled = not state.audio_enabled
     pygame.mixer.music.set_volume(0.2 if state.audio_enabled else 0)
 
 def draw_button(screen, text, x, y, w, h, color, hover_color, action=None, border=0):
+    """Draw a button and handle hover/click callbacks."""
     # 1) get real window mouse pos
     mouse_win = pygame.mouse.get_pos()
     win_w, win_h = pygame.display.get_surface().get_size()
@@ -88,7 +100,7 @@ def _cell_color(cell: Cell, show_ships: bool):
     return None
 
 def draw_grid(screen, board, offset_x, offset_y, show_ships=False, cell_size=None):
-    # allow custom grid cell size, defaulting to Config.CELL_SIZE
+    """Render grid lines and cell states (hits, misses, optional ships)."""
     size = cell_size or Config.CELL_SIZE
 
     for row in range(Config.GRID_SIZE):
@@ -110,14 +122,14 @@ def draw_grid(screen, board, offset_x, offset_y, show_ships=False, cell_size=Non
                     pygame.draw.rect(screen, color, rect.inflate(-4, -4))
 
 def draw_text_center(screen, text, x, y, font_size=30,bg_color=None):
+    """Center and draw text within a rect."""
     font = pygame.font.SysFont(None, font_size)
     surface = font.render(text, True, Config.WHITE,bg_color)
     rect = surface.get_rect(center=(x, y))
     screen.blit(surface, rect)
 
 def draw_modal(screen, title, subtitle, on_yes, on_no):
-     # ─── Blur the existing canvas behind the modal ───────────────
-    # 1) Snapshot current screen
+    """Overlay a modal dialog with yes/no options."""
     bg = screen.copy()
     w, h = bg.get_size()
     # 2) Downscale and upscale to approximate Gaussian blur
@@ -142,6 +154,7 @@ def draw_modal(screen, title, subtitle, on_yes, on_no):
     draw_button(screen, "No", box_rect.right - 160, box_rect.y + 120, 100, 40, Config.RED, Config.DARK_GRAY, on_no,3)
 
 def draw_text_input_box(screen, user_text):
+    """Draw an editable text input box."""
     font       = pygame.font.SysFont(None, 36)
     # (prompt is now drawn by the caller, e.g. "Enter size (5-20):")
     input_box  = pygame.Rect(Config.WIDTH // 2 - 150, Config.HEIGHT // 2, 300, 40)

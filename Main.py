@@ -1,4 +1,4 @@
-# Main.py
+
 import os
 os.environ["SDL_VIDEO_CENTERED"] = "1"
 import pygame
@@ -19,7 +19,19 @@ from screens.stats_logic    import StatsLogic
 from screens.stats_render   import StatsRender
 from helpers.draw_helpers   import draw_modal,draw_button,draw_text_center
 from game.board_helpers     import create_board
-from screens.menu_tk import MenuTk  
+from screens.menu_tk import MenuTk 
+
+"""
+Module: Main.py
+Purpose:
+  - Entry point: Tk menu launcher and Pygame game loop.
+  - Initializes subsystems (graphics, audio, state, screens).
+  - Manages scene transitions: menu, settings, lobby, placing, playing, stats.
+  - Handles window events, modal dialogs, and scaling.
+Future Hooks:
+  - Support fullscreen toggle and dynamic resolution.
+  - Log performance metrics (FPS, memory).
+"""
 
 def show_tk_menu(state=None):
     def start_play():
@@ -55,6 +67,7 @@ def show_tk_menu(state=None):
     menu.run()
 
 def run_game(initial_state="menu", state=None):
+    """Initialize Pygame, load assets, wire GameState and subsystems, then enter main loop."""
     # ─── Pygame Initialization ───────────────────────────────────────────────────
     pygame.init()
     pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
@@ -82,9 +95,8 @@ def run_game(initial_state="menu", state=None):
     Config.update_layout()
 
     # ─── GameState & Reset Wiring ────────────────────────────────────────────────
-    # ─── GameState & Reset Wiring ────────────────────────────────────────────────
     if state is None:
-        # first time through: no state passed in, so create one
+        
         state = GameState(lambda: None)
     # remember initial state (menu, settings, etc.)
     state.game_state = initial_state
@@ -92,7 +104,7 @@ def run_game(initial_state="menu", state=None):
     placing_render = PlacingRender(placing_logic)
     state.reset_callback = placing_logic.reset
     state.is_fullscreen = False
-    # Now state.reset_all() will call placing_logic.reset() for ship placement
+    
 
  
     settings_logic  = SettingsLogic(screen, state)
@@ -203,8 +215,7 @@ def run_game(initial_state="menu", state=None):
             elif event.type == pygame.VIDEORESIZE:
                 # update your window dims
                 screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
-                # optionally re-rescale backgrounds, if you want crisp edges
-                # (but with canvas scaling you can skip this)
+            
                 menu_background   = pygame.transform.smoothscale(bg_menu_img,   (VW, VH))
                 battle_background = pygame.transform.smoothscale(battle_bg_img, (VW, VH))
                 continue

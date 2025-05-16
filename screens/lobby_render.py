@@ -4,6 +4,16 @@ import pygame
 from helpers.draw_helpers import draw_text_center, draw_button, draw_text_input_box
 from core.config import Config
 
+"""
+Module: lobby_render.py
+Purpose:
+  - Pygame render layer for Multiplayer Lobby.
+  - Draws Host/Join buttons, back button, input box, and status text.
+Future Hooks:
+  - Display list of discovered LAN lobbies.
+  - Show connection errors inline.
+"""
+
 class LobbyRender:
     def __init__(self, logic):
         self.logic = logic

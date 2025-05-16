@@ -2,6 +2,18 @@ import random
 import os
 import pygame
 
+
+"""
+Module: config.py
+Purpose:
+  - Global constants for window, grid, scoring, asset paths.
+  - Layout recalculation when grid size changes.
+  - Stub for smart ship generator.
+Future Hooks:
+  - Sync Config changes over network.
+  - Plug in advanced packing algorithm in generate_ships_for_grid().
+"""
+
 class Config:
     # ─── Window & Grid Defaults ───
     WIDTH, HEIGHT         = 1000, 600
@@ -74,7 +86,10 @@ class Config:
 
     @staticmethod
     def generate_ships_for_grid():
-        """Populate Config.SHIP_SIZES based on grid size or smart toggle."""
+        """
+        Populate Config.SHIP_SIZES for current GRID_SIZE.
+        Stub: implement smarter packing (e.g. minimal clustering).
+        """
         if Config.USE_SMART_SHIP_GENERATOR:
             # (Your existing smart‐placement logic)
             pass
@@ -92,11 +107,10 @@ class Config:
     @staticmethod
     def update_layout():
         """
-        Call after changing GRID_SIZE:
-         • Recompute CELL_SIZE, GRID_WIDTH
-         • Recompute board offsets
-         • Regenerate SHIP_SIZES
-         • Also compute scaled sizes for playing screens
+        After changing GRID_SIZE:
+        - Recompute CELL_SIZE to fit viewport
+        - Update grid offsets for placement & play
+        - Regenerate SHIP_SIZES via generate_ships_for_grid()
         """
         padding = 3
         max_w   = Config.WIDTH  // (2 * Config.GRID_SIZE + padding)
