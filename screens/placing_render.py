@@ -38,11 +38,13 @@ class PlacingRender:
         draw_top_bar(screen, state)
 
         def back():
+            # ─── NEW: wipe out any ships/board state so it won't persist on re-entry
+            self.logic.reset()
             if state.history:
-                state.skip_push = True
-                state.game_state = state.history.pop()
+                state.skip_push   = True
+                state.game_state  = state.history.pop()
             else:
-                state.game_state = "menu"
+                state.game_state  = "menu"
         draw_button(screen, "Back (esc)", 10, 40, 130, 30,
                     Config.GRAY, Config.DARK_GRAY, back, 3)
 

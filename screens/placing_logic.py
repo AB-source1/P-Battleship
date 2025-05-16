@@ -2,7 +2,7 @@
 
 import pygame
 from game.draggable_ship import DraggableShip
-from game.board_helpers import Cell, get_grid_pos
+from game.board_helpers import Cell, get_grid_pos, create_board
 from core.config import Config
 from helpers.draw_helpers import draw_top_bar
 
@@ -210,6 +210,7 @@ class PlacingLogic:
             self.ready_to_start = False  # undo disables ready
 
     def reset(self):
+        self.state.player_board = create_board()
         self.active_ship  = None
         self.preview_ship = None
         self.ship_queue   = []

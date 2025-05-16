@@ -118,8 +118,8 @@ class StatsRender:
         # Column headers: always “Player 1” / “Player 2” in Pass&Play,
         # else the usual You/Computer or You/Opponent
         if state.pass_play_mode:
-            left_label  = "Player 1"
-            right_label = "Player 2"
+            left_label  = ""
+            right_label = ""
         elif state.network:
             left_label  = "You"
             right_label = "Opponent"
