@@ -7,6 +7,16 @@ from helpers.draw_helpers import (
 from core.config import Config
 from game.board_helpers import Cell
 
+"""
+Module: placing_render.py
+Purpose:
+  - Pygame render layer for ship placement screen.
+  - Draws grid, placed ships, live placement preview (valid/invalid).
+  - Buttons for rotate, undo, ready; overlays waiting message in multiplayer.
+Future Hooks:
+  - Animate remote opponent placement steps via network updates.
+"""
+
 _panel_raw = None
 
 class PlacingRender:
@@ -38,11 +48,13 @@ class PlacingRender:
         draw_top_bar(screen, state)
 
         def back():
+            # ─── NEW: wipe out any ships/board state so it won't persist on re-entry
+            self.logic.reset()
             if state.history:
-                state.skip_push = True
-                state.game_state = state.history.pop()
+                state.skip_push   = True
+                state.game_state  = state.history.pop()
             else:
-                state.game_state = "menu"
+                state.game_state  = "menu"
         draw_button(screen, "Back (esc)", 10, 40, 130, 30,
                     Config.GRAY, Config.DARK_GRAY, back, 3)
 

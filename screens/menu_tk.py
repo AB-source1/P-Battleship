@@ -1,9 +1,19 @@
-# screens/menu_tk.py
+
 
 import tkinter as tk
 from PIL import Image, ImageTk
 from core.config import Config
 import tkinter.font as tkFont
+
+"""
+Module: menu_tk.py
+Purpose:
+  - Tkinter-based launcher for main menu (Play, Settings, Pass & Play, Quit).
+  - Centers window on screen, responsive button layout via debounce.
+  - Integrates PIL for background image handling.
+Future Hooks:
+  - Display a list of recent LAN lobbies discovered via UDP broadcast scanning.
+"""
 
 def _hex(rgb_tuple):
     return "#{:02x}{:02x}{:02x}".format(*rgb_tuple)
@@ -88,6 +98,7 @@ class MenuTk:
         self.canvas.image = self.bg_img
 
     def _layout_buttons(self):
+        """Instantiate Play, Settings, Pass & Play, and Quit buttons in layout."""
         w, h = self.root.winfo_width(), self.root.winfo_height()
         if w < 100 or h < 100:
             return

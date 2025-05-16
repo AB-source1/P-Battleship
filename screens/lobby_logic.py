@@ -7,6 +7,17 @@ import socket
 from network import Network
 from core.game_state import GameState
 
+"""
+Module: lobby_logic.py
+Purpose:
+  - Pygame logic for Multiplayer Lobby: hosting or joining.
+  - Manages port binding, client acceptance, and state transitions.
+  - Handles text input for join-mode.
+Future Hooks:
+  - Implement LAN discovery via UDP broadcast.
+  - Retry logic for port binding and reconnection.
+"""
+
 class LobbyLogic:
     """
     Manages the multiplayer lobby: hosting or joining a game.

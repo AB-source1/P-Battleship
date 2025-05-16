@@ -7,6 +7,19 @@ from core.config import Config
 from game.draggable_ship import DraggableShip, SHIP_IMAGE_FILES
 from game.board_helpers import Cell
 
+"""
+Module: playing_render.py
+Purpose:
+  - Pygame render layer for in-battle screen.
+  - Draws two-panel layout: your fleet & enemy waters.
+  - Renders hits, misses, sunk-ship overlays, and animations (explosions, splashes).
+  - Displays score, timer, and turn indicator (you vs opponent).
+  - Handles end-of-game overlay with appropriate buttons.
+Future Hooks:
+  - Animate remote shots landing with network timestamps.
+  - Support custom UI skins via theme config.
+"""
+
 _panel_raw = None
 class PlayingRender:
     def __init__(self, logic):
@@ -25,6 +38,7 @@ class PlayingRender:
         self.panel  = pygame.transform.smoothscale(_panel_raw, (padded, padded))
         self.margin = margin
     def draw(self, screen, state):
+        """Render the main battle UI elements each frame."""
         # 1) Always draw top bar
         draw_top_bar(screen, state)
 
@@ -42,7 +56,7 @@ class PlayingRender:
         draw_text_center(screen,
                          f"Player {state.current_player+1}'s Turn",
                          Config.WIDTH // 2,
-                         Config.TOP_BAR_HEIGHT + 50)
+                         Config.TOP_BAR_HEIGHT + 40)
 
         # Two hidden boards
          # --- LEFT: Player 1’s board (ships hidden) ---
@@ -71,15 +85,26 @@ class PlayingRender:
             cell_size=self.cell_size
         )
         # Player names + scores
-        label_y   = Config.PLAY_BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT
+        label_y = Config.PLAY_BOARD_OFFSET_Y - 70 + Config.TOP_BAR_HEIGHT
         cx1 = Config.PLAY_BOARD_OFFSET_X + Config.GRID_WIDTH // 2
         cx2 = Config.PLAY_ENEMY_OFFSET_X + Config.GRID_WIDTH // 2
-        draw_text_center(screen,
-                         f"Player 1   Score: {state.pass_play_score[0]}",
-                         cx1, label_y, font_size=28)
-        draw_text_center(screen,
-                         f"Player 2   Score: {state.pass_play_score[1]}",
-                         cx2, label_y, font_size=28)
+
+        # Draw both labels in a loop:
+        for cx, player_idx in ((cx1, 0), (cx2, 1)):
+            text = f"Player {player_idx+1}   Score: {state.pass_play_score[player_idx]}"
+            # match font_size used by draw_text_center:
+            font_size = 28
+            font = pygame.font.SysFont(None, font_size, bold=True)
+            text_surf = font.render(text, True, (255, 255, 255))
+            text_rect = text_surf.get_rect(center=(cx, label_y))
+
+            # draw a dark box behind with padding
+            pad_x, pad_y = 10, 6
+            bg_rect = text_rect.inflate(pad_x*2, pad_y*2)
+            pygame.draw.rect(screen, Config.DARK_GRAY, bg_rect, border_radius=4)
+
+            # blit text atop the box
+            screen.blit(text_surf, text_rect)
 
         # Reveal sunk ships
         for idx, (ships, offx) in enumerate([
@@ -160,7 +185,7 @@ class PlayingRender:
             screen,
             turn_label,
             Config.WIDTH // 2,
-            Config.TOP_BAR_HEIGHT + 50,
+            Config.TOP_BAR_HEIGHT + 40,
             font_size=24
         )
         # End-of-game or active placement
@@ -172,18 +197,28 @@ class PlayingRender:
             self._draw_endgame(screen, msg)
         else:
             # Show labels
-            draw_text_center(
-            screen,
-            "Your Fleet",
-            Config.PLAY_BOARD_OFFSET_X + Config.PLAYING_GRID_WIDTH // 2,
-            Config.PLAY_BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT,
-            )
-            draw_text_center(
-                screen,
-                "Enemy Waters",
-                Config.PLAY_ENEMY_OFFSET_X + Config.PLAYING_GRID_WIDTH // 2,
-                Config.PLAY_BOARD_OFFSET_Y - 30 + Config.TOP_BAR_HEIGHT,
-            )
+            label = "Your Fleet"
+            font_size = 24
+            font = pygame.font.SysFont(None, font_size, bold=True)
+            text_surf = font.render(label, True, (255,255,255))
+            x = Config.PLAY_BOARD_OFFSET_X + Config.PLAYING_GRID_WIDTH // 2
+            y = Config.PLAY_BOARD_OFFSET_Y - 60 + Config.TOP_BAR_HEIGHT
+            text_rect = text_surf.get_rect(center=(x, y))
+            # draw dark background with 8px padding
+            pad_x, pad_y = 8, 4
+            bg_rect = text_rect.inflate(pad_x*2, pad_y*2)
+            pygame.draw.rect(screen, Config.DARK_GRAY, bg_rect, border_radius=4)
+            screen.blit(text_surf, text_rect)
+            label = "Enemy Waters"
+            # reuse same font
+            text_surf = font.render(label, True, (255,255,255))
+            x = Config.PLAY_ENEMY_OFFSET_X + Config.PLAYING_GRID_WIDTH // 2
+            y = Config.PLAY_BOARD_OFFSET_Y - 60 + Config.TOP_BAR_HEIGHT
+            text_rect = text_surf.get_rect(center=(x, y))
+            bg_rect = text_rect.inflate(pad_x*2, pad_y*2)
+            pygame.draw.rect(screen, Config.DARK_GRAY, bg_rect, border_radius=4)
+            screen.blit(text_surf, text_rect)
+            
             # Overlay placed ships & markers
             for ship in state.placed_ships:
             # 1) top-left grid cell of this ship

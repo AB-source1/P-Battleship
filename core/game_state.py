@@ -1,6 +1,17 @@
 from game.board_helpers import create_board, place_ship_randomly, Cell
 from core.config import Config
 
+"""
+Module: game_state.py
+Purpose:
+  - Central state container for the entire game lifecycle.
+  - Tracks UI flags, scores, timing, and scene history.
+  - Manages network handles & handshake flags for multiplayer.
+  - Offers reset routines at various scopes: per‑round, per‑match.
+Future Hooks:
+  - Close or reinitialize network socket on reset_all.
+  - Emit "reset" events to remote peer.
+"""
 class GameState:
     def __init__(self, reset_callback):
         self.reset_callback = reset_callback
@@ -67,7 +78,8 @@ class GameState:
 
 
     def reset(self):
-        """(Re)create both boards and the player's attack grid."""
+        """Reinitialize only the two boards & attacks; re‑invoke placement callback."""
+        # clear boards and flags but keep scores
         self.player_board   = create_board()
         self.computer_board = create_board()
         self.computer_ships_coords = []
@@ -92,11 +104,12 @@ class GameState:
         self.reset_callback()
 
     def count_ships(self, board):
-        """Return number of SHIP cells remaining on `board`."""
+        """Return count of SHIP cells on given board."""
         return sum(row.count(Cell.SHIP) for row in board)
 
     def reset_with_counts(self):
-        """Reset boards and initialize ship‐count trackers."""
+        """Reset boards plus recalc ships remaining counts."""
+        # call reset, then update counters
         self.reset()
         # Player ships set later by placing logic
         self.player_ships   = 0
@@ -104,13 +117,11 @@ class GameState:
 
     def reset_all(self):
         """
-        Full match-start reset:
-          • Boards & ship counts
-          • UI / turn flags
-          • AI memory
-          • Stats counters & timestamps
-          • Scene selection
-        (Does NOT touch `difficulty` or `audio_enabled` so those persist.)
+        Full-match reset:
+        - Calls reset_with_counts()
+        - Clears UI, stats, AI memory, pass‑and‑play info
+        - Preserves audio_enabled and difficulty across matches
+        Future: also call self.network.close() if exists
         """
         # Boards & counts
         self.reset_with_counts()

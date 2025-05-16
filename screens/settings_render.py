@@ -5,6 +5,14 @@ from helpers.draw_helpers import (
 )
 from core.config import Config
 
+"""
+Module: settings_render.py
+Purpose:
+  - Render Pygame settings menu: grid size presets, custom input, smart generator, AI difficulty.
+Future Hooks:
+  - Broadcast settings via network to opponent.
+"""
+
 class SettingsRender:
     def __init__(self, logic):
         self.logic = logic

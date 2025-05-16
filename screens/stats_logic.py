@@ -1,5 +1,13 @@
 import pygame
 from core.game_state import GameState
+"""
+Module: stats_logic.py
+Purpose:
+  - Handle callbacks for end-of-game statistics screen.
+  - Operations: Play Again resets game state; Return to Menu resets state and shows main menu.
+Future Hooks:
+  - Sync final stats to network peer for shared summary.
+"""
 
 class StatsLogic:
     def __init__(self, screen, state: GameState):
